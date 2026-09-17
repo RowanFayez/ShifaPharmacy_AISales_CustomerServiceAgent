@@ -55,13 +55,13 @@ Source of truth: `docs/assessment.pdf`. Evidence is added only after a command, 
 | 49 | Use CSS in the frontend. | 7. Required Technology Stack / Frontend | Mandatory | DONE | `app/static/css/admin.css` | `pytest -q` → 8 passed | |
 | 50 | Use JavaScript where needed in the frontend. | 7. Required Technology Stack / Frontend | Mandatory | NOT_STARTED | — | — | |
 | 51 | Submit a GitHub repository containing the complete project. | 9. Deliverables / GitHub Repository | Mandatory | NOT_STARTED | — | — | External publication required. |
-| 52 | Include source code in the submitted repository. | 9. Deliverables / GitHub Repository | Mandatory | NOT_STARTED | — | — | |
-| 53 | Include database models in the submitted repository. | 9. Deliverables / GitHub Repository | Mandatory | NOT_STARTED | — | — | |
+| 52 | Include source code in the submitted repository. | 9. Deliverables / GitHub Repository | Mandatory | DONE | GitHub `main` | `git push -u origin main` | Published in commit `c8a7013`. |
+| 53 | Include database models in the submitted repository. | 9. Deliverables / GitHub Repository | Mandatory | DONE | `app/models/` | `git push -u origin main` | Published in commit `c8a7013`. |
 | 54 | Include the agent/LangGraph implementation in the submitted repository. | 9. Deliverables / GitHub Repository | Mandatory | NOT_STARTED | — | — | |
-| 55 | Include the RAG implementation in the submitted repository. | 9. Deliverables / GitHub Repository | Mandatory | NOT_STARTED | — | — | |
-| 56 | Include the Flask dashboard in the submitted repository. | 9. Deliverables / GitHub Repository | Mandatory | NOT_STARTED | — | — | |
+| 55 | Include the RAG implementation in the submitted repository. | 9. Deliverables / GitHub Repository | Mandatory | DONE | `agent/rag.py`, `app/services/kb_service.py` | `git push -u origin main` | Published in commit `c8a7013`. |
+| 56 | Include the Flask dashboard in the submitted repository. | 9. Deliverables / GitHub Repository | Mandatory | DONE | `app/blueprints/admin/`, `app/templates/admin/` | `git push -u origin main` | Published in commit `c8a7013`. |
 | 57 | Include tool/function implementations in the submitted repository. | 9. Deliverables / GitHub Repository | Mandatory | NOT_STARTED | — | — | |
-| 58 | Include requirements/dependencies in the submitted repository. | 9. Deliverables / GitHub Repository | Mandatory | IMPLEMENTED — NOT FULLY VERIFIED | `requirements.txt` | `M0 structural check: PASS` | Manifest exists; this workspace is not yet a submitted GitHub repository. |
+| 58 | Include requirements/dependencies in the submitted repository. | 9. Deliverables / GitHub Repository | Mandatory | DONE | `requirements.txt` | `git push -u origin main` | Published in commit `c8a7013`. |
 | 59 | Include a README explaining business, architecture, LangGraph, RAG, DB, tools, local run, env vars, conversations, limitations, and assumptions. | 9. Deliverables / README | Mandatory | NOT_STARTED | `README.md` | — | Atomic README topics will be checked in M9. |
 | 60 | Provide a runnable demo: conversation, understanding, RAG response, real action, dashboard result, and dashboard data updates. | 9. Deliverables / Demo | Mandatory | NOT_STARTED | — | — | |
 | 61 | Be able to explain, test, and modify the implementation in the interview. | 10. AI Usage Policy | Mandatory | NOT_STARTED | `docs/DECISIONS.md` | — | |

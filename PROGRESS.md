@@ -23,7 +23,7 @@ M4 knowledge admin, LangGraph, chat, and Messenger remain unimplemented.
 
 ## Last session
 
-18 September 2026 · Installed Python 3.12 project venv, fixed M2 CSRF and SQLite-path defects, verified migration/seed and 8 tests · implemented M3 persistent Chroma RAG with E5 embedding cache, Arabic normalization, CRUD sync, reindex script, and real retrieval smoke test · configured verified fallback model `nex-agi/nex-n2.5-mini:free`.
+18 September 2026 · Installed Python 3.12 project venv, fixed M2 CSRF and SQLite-path defects, verified migration/seed and 8 tests · implemented M3 persistent Chroma RAG with E5 embedding cache, Arabic normalization, CRUD sync, reindex script, and real retrieval smoke test · configured verified fallback model `nex-agi/nex-n2.5-mini:free` · pushed M0–M3 to GitHub `main` (commit `c8a7013`).
 
 ## Open blockers
 
