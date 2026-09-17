@@ -1,0 +1,6 @@
+{% extends 'base.html' %}
+{% block title %}{{ customer.full_name }} · Shifa Pharmacy{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center"><h1 class="h3">{{ customer.full_name }}</h1><a class="btn btn-outline-secondary" href="{{ url_for('admin.customer_list') }}">All customers</a></div><p class="text-muted">{{ customer.phone }} · {{ customer.email or 'No email' }}<br>{{ customer.default_address or 'No saved address' }}</p>
+<h2 class="h5 mt-4">Order history</h2><div class="table-responsive"><table class="table"><thead><tr><th>Order</th><th>Status</th><th>Total</th><th>Date</th></tr></thead><tbody>{% for order in customer.orders|sort(attribute='created_at', reverse=true) %}<tr><td><a href="{{ url_for('admin.order_detail', order_id=order.id) }}">{{ order.order_number }}</a></td><td>{{ order.status.replace('_', ' ') }}</td><td>EGP {{ '%.2f'|format(order.total) }}</td><td>{{ order.created_at.strftime('%Y-%m-%d') }}</td></tr>{% else %}<tr><td colspan="4" class="text-muted">No orders yet.</td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}

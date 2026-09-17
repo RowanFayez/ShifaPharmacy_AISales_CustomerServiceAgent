@@ -1,0 +1,4 @@
+body { background: #f8faf9; }
+.stat-card { border-color: #d7e7dc; color: inherit; }
+.stat-card:hover { border-color: #198754; box-shadow: 0 .25rem .75rem rgba(25, 135, 84, .12); }
+.form-card { max-width: 760px; }

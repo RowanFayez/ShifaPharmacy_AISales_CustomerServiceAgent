@@ -1,0 +1,6 @@
+This directory contains the Alembic migrations managed by Flask-Migrate.
+
+Apply the initial schema with:
+
+    flask --app app:create_app db upgrade
+
