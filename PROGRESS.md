@@ -23,7 +23,7 @@ M3 adds persistent Chroma, local multilingual E5 embeddings, Arabic normalizatio
 
 ## Last session
 
-18 September 2026 · Re-verified M0–M3: clean migration/seed produced 6 categories, 40 products (8 Rx), 3 customers, and 15 knowledge documents; reindex rebuilt 15 documents; live delivery retrieval scored 0.8782. Reconciled stale Git evidence: checked-out GitHub `main` is `0fcfa4e`, not `c8a7013`. Primary OpenRouter tool-call and structured-JSON probes passed. Completed M4 knowledge CRUD, status, and reindex UI; targeted tests passed and full suite is 10 passed.
+18 September 2026 · Re-verified M0–M3: clean migration/seed produced 6 categories, 40 products (8 Rx), 3 customers, and 15 knowledge documents; reindex rebuilt 15 documents; live delivery retrieval scored 0.8782. Reconciled stale Git evidence: the baseline was `0fcfa4e`, not `c8a7013`. Primary OpenRouter tool-call and structured-JSON probes passed. Completed and published M4 knowledge CRUD, status, and reindex UI; targeted tests passed and full suite is 10 passed.
 
 ## Open blockers
 
