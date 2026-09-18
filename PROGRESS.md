@@ -1,9 +1,9 @@
 ## Current state
 
-M0–M4 are runtime-verified in the repository `.venv` (Python 3.12).
+M0–M6 are runtime-verified in the repository `.venv` (Python 3.12).
 SQLite migration and seed complete: 6 categories, 40 products (8 Rx), 3 customers, and 15 bilingual knowledge documents.
 The Flask-WTF dashboard now includes knowledge-document CRUD, per-document index status, and a reindex action; its index synchronization is covered by offline tests.
-M3 adds persistent Chroma, local multilingual E5 embeddings, Arabic normalization, cache invalidation, and KB CRUD sync. LangGraph, chat, and Messenger remain unimplemented.
+M5 adds validated, service-backed pharmacy tools; M6 adds a stateful LangGraph with SQLite checkpoints and deterministic Rx, confirmation, and safety gates. Chat and Messenger remain unimplemented.
 
 ## Milestones
 
@@ -14,8 +14,8 @@ M3 adds persistent Chroma, local multilingual E5 embeddings, Arabic normalizatio
 | M2 — Core admin pages | DONE |
 | M3 — RAG and KB sync | DONE |
 | M4 — Knowledge admin | DONE |
-| M5 — Tools and services | NOT_STARTED |
-| M6 — LangGraph agent | NOT_STARTED |
+| M5 — Tools and services | DONE |
+| M6 — LangGraph agent | DONE |
 | M7 — Chat and persistence | NOT_STARTED |
 | M8 — Multilingual hardening and validation | NOT_STARTED |
 | M9 — README, diagrams, fresh-clone verification | NOT_STARTED |
@@ -23,7 +23,7 @@ M3 adds persistent Chroma, local multilingual E5 embeddings, Arabic normalizatio
 
 ## Last session
 
-18 September 2026 · Re-verified M0–M3: clean migration/seed produced 6 categories, 40 products (8 Rx), 3 customers, and 15 knowledge documents; reindex rebuilt 15 documents; live delivery retrieval scored 0.8782. Reconciled stale Git evidence: the baseline was `0fcfa4e`, not `c8a7013`. Primary OpenRouter tool-call and structured-JSON probes passed. Completed and published M4 knowledge CRUD, status, and reindex UI; targeted tests passed and full suite is 10 passed.
+18 September 2026 · Installed declared LangGraph dependencies and completed M5/M6. Validated tools call transaction-safe services; a real order decrements stock and Rx orders are rejected. LangGraph branches through safety, Rx, confirmation, and tool execution with SQLite checkpoints. Full suite: 16 passed.
 
 ## Open blockers
 
@@ -32,4 +32,4 @@ M3 adds persistent Chroma, local multilingual E5 embeddings, Arabic normalizatio
 
 ## Next up
 
-M5 — business tools and service layer.
+M7 — chat UI, API, and conversation persistence.

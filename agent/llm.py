@@ -14,6 +14,14 @@ from agent.lang import normalize_for_retrieval
 
 DEFAULT_EMBEDDING_MODEL = "intfloat/multilingual-e5-small"
 
+def get_chat_model():
+    """Create the OpenRouter chat client only when an agent turn needs it."""
+    import os
+    from langchain_openai import ChatOpenAI
+    key = os.getenv("OPENROUTER_API_KEY"); model = os.getenv("LLM_MODEL")
+    if not key or not model: raise RuntimeError("OPENROUTER_API_KEY and LLM_MODEL are required for live agent turns.")
+    return ChatOpenAI(model=model, api_key=key, base_url=os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"), temperature=0)
+
 
 class LocalMultilingualEmbeddings(Embeddings):
     """Sentence-transformers adapter with the required consistent Arabic normalization."""

@@ -18,7 +18,7 @@ Source of truth: `docs/assessment.pdf`. Evidence is added only after a command, 
 | 12 | Answer questions about products/services. | 1. AI Agent / Sales | Mandatory | NOT_STARTED | — | — | |
 | 13 | Provide prices and other available information. | 1. AI Agent / Sales | Mandatory | NOT_STARTED | — | — | |
 | 14 | Help the customer make a decision. | 1. AI Agent / Sales | Mandatory | NOT_STARTED | — | — | |
-| 15 | Perform at least one real business action. | 1. AI Agent / Sales | Mandatory | NOT_STARTED | — | — | |
+| 15 | Perform at least one real business action. | 1. AI Agent / Sales | Mandatory | DONE | `app/services/order_service.py`, `agent/tools.py` | `tests/test_tools.py` → pass | Creates an order and decrements live stock. |
 | 16 | Use RAG in the agent. | 2. RAG | Mandatory | IMPLEMENTED — NOT FULLY VERIFIED | `agent/rag.py`, `app/services/kb_service.py` | `pytest -q` → 10 passed; `scripts/reindex_kb.py` → 15 indexed (18 Sep) | RAG is verified directly; LangGraph integration is M6. |
 | 17 | Keep business-relevant information in the knowledge base. | 2. RAG | Mandatory | DONE | `data/knowledge/`, `scripts/seed_db.py` | Clean seed → 15 documents; reindex → 15 indexed (18 Sep) | Bilingual source documents are seeded into `KnowledgeDocument`. |
 | 18 | Retrieve relevant knowledge-base information when answering customers. | 2. RAG | Mandatory | IMPLEMENTED — NOT FULLY VERIFIED | `agent/rag.py` | Live delivery-fee query → `Delivery areas and fees`, score `0.8782` (18 Sep) | Direct retrieval is verified; customer-agent integration is M6. |
@@ -26,11 +26,11 @@ Source of truth: `docs/assessment.pdf`. Evidence is added only after a command, 
 | 20 | Allow an administrator to update existing knowledge/data. | 2. RAG / RAG Management | Mandatory | DONE | `admin.knowledge_edit`, `kb_service.update_document` | `tests/test_knowledge_admin.py` → 2 passed | Edit synchronizes the derived index. |
 | 21 | Allow an administrator to delete knowledge/data. | 2. RAG / RAG Management | Mandatory | DONE | `admin.knowledge_delete`, `kb_service.delete_document` | `tests/test_knowledge_admin.py` → 2 passed | Delete removes both SQL and index data. |
 | 22 | Use updated knowledge/data in the agent retrieval process. | 2. RAG / RAG Management | Mandatory | IMPLEMENTED — NOT FULLY VERIFIED | `kb_service.update_document`, `agent/rag.py` | `tests/test_rag.py` and `tests/test_knowledge_admin.py` | Update reaches direct retrieval; LangGraph use is M6. |
-| 23 | Implement the agent using LangGraph. | 3. LangGraph | Mandatory | NOT_STARTED | — | — | |
-| 24 | Give the LangGraph a meaningful workflow, not one LLM call. | 3. LangGraph | Mandatory | NOT_STARTED | — | — | |
-| 25 | Perform an action using a tool/function. | 4. Business Action / Function Calling | Mandatory | NOT_STARTED | — | — | |
-| 26 | Make the tool/function action appropriate to the selected business. | 4. Business Action / Function Calling | Mandatory | NOT_STARTED | — | — | |
-| 27 | Make the action interact with the backend/database rather than return a fake LLM response. | 4. Business Action / Function Calling | Mandatory | NOT_STARTED | — | — | |
+| 23 | Implement the agent using LangGraph. | 3. LangGraph | Mandatory | DONE | `agent/graph.py`, `agent/state.py` | `tests/test_graph.py` → pass | Stateful LangGraph with SQLite checkpointer. |
+| 24 | Give the LangGraph a meaningful workflow, not one LLM call. | 3. LangGraph | Mandatory | DONE | `agent/nodes/`, `agent/graph.py` | `tests/test_graph.py` → pass | Safety, Rx, confirmation, RAG, and tool branches are wired. |
+| 25 | Perform an action using a tool/function. | 4. Business Action / Function Calling | Mandatory | DONE | `agent/tools.py` | `tests/test_tools.py` → pass | Validated tool envelopes call services. |
+| 26 | Make the tool/function action appropriate to the selected business. | 4. Business Action / Function Calling | Mandatory | DONE | `app/services/order_service.py` | `tests/test_tools.py` → pass | Pharmacy order, prescription request, status, and escalation tools. |
+| 27 | Make the action interact with the backend/database rather than return a fake LLM response. | 4. Business Action / Function Calling | Mandatory | DONE | `app/services/order_service.py` | `tests/test_tools.py` → pass | Order rows and stock are transactionally updated. |
 | 28 | Build an administration dashboard using Flask and Flask templates. | 5. Flask Dashboard | Mandatory | DONE | `app/blueprints/admin/`, `app/templates/admin/` | `pytest -q --disable-warnings` → 10 passed | M2 routes and M4 knowledge UI are runtime-tested. |
 | 29 | Let an administrator see and manage the system. | 5. Flask Dashboard | Mandatory | DONE | `app/blueprints/admin/routes.py` | `pytest -q` → 8 passed | M2 scope covers categories, products, orders, and customers. |
 | 30 | Display business data relevant to the selected business. | 5. Flask Dashboard / Business Data | Mandatory | DONE | `app/templates/admin/` | `pytest -q` → 8 passed | Core business data routes are tested. |
@@ -45,9 +45,9 @@ Source of truth: `docs/assessment.pdf`. Evidence is added only after a command, 
 | 39 | Store agent-related data. | 6. Database | Mandatory | DONE | `app/models/knowledge.py`, `app/models/chat.py` | Seed count verification; `pytest -q` → 8 passed | Knowledge, conversation, message, and handoff tables are migrated. |
 | 40 | Use Python for the backend. | 7. Required Technology Stack / Backend | Mandatory | DONE | `app/`, `scripts/` | Python 3.12 venv; `pytest -q` → 8 passed | |
 | 41 | Use Flask for the backend. | 7. Required Technology Stack / Backend | Mandatory | DONE | `app/__init__.py`, `app/blueprints/` | `pytest -q` → 8 passed | |
-| 42 | Use LangGraph for the AI implementation. | 7. Required Technology Stack / AI | Mandatory | NOT_STARTED | — | — | |
+| 42 | Use LangGraph for the AI implementation. | 7. Required Technology Stack / AI | Mandatory | DONE | `agent/graph.py` | `tests/test_graph.py` → pass | Uses `StateGraph` and `SqliteSaver`. |
 | 43 | Use RAG for the AI implementation. | 7. Required Technology Stack / AI | Mandatory | DONE | `agent/rag.py`, `app/services/kb_service.py` | `pytest -q` → 8 passed; real Chroma smoke test | Graph integration is deferred to M6. |
-| 44 | Use an LLM. | 7. Required Technology Stack / AI | Mandatory | NOT_STARTED | — | — | M6 integration pending. |
+| 44 | Use an LLM. | 7. Required Technology Stack / AI | Mandatory | IMPLEMENTED — NOT FULLY VERIFIED | `agent/llm.py`, `agent/nodes/reasoner.py` | OpenRouter capability probes; mocked graph tests | Live graph turn remains for M7 UI verification. |
 | 45 | Use an embedding model. | 7. Required Technology Stack / AI | Mandatory | DONE | `agent/llm.py` | `scripts/reindex_kb.py` → 15 indexed | Local `intfloat/multilingual-e5-small`. |
 | 46 | Use a vector database or retrieval system. | 7. Required Technology Stack / AI | Mandatory | DONE | `agent/rag.py` | `scripts/reindex_kb.py`; real retrieval smoke test | Persistent ChromaDB. |
 | 47 | Use Flask templates in the frontend. | 7. Required Technology Stack / Frontend | Mandatory | DONE | `app/templates/` | `pytest -q` → 8 passed | |
@@ -57,10 +57,10 @@ Source of truth: `docs/assessment.pdf`. Evidence is added only after a command, 
 | 51 | Submit a GitHub repository containing the complete project. | 9. Deliverables / GitHub Repository | Mandatory | NOT_STARTED | — | — | External publication required. |
 | 52 | Include source code in the submitted repository. | 9. Deliverables / GitHub Repository | Mandatory | DONE | GitHub `main` | `git status -sb` → `main...origin/main` | Published on GitHub `main`. |
 | 53 | Include database models in the submitted repository. | 9. Deliverables / GitHub Repository | Mandatory | DONE | `app/models/` | `git status -sb` → `main...origin/main` | Published on GitHub `main`. |
-| 54 | Include the agent/LangGraph implementation in the submitted repository. | 9. Deliverables / GitHub Repository | Mandatory | NOT_STARTED | — | — | |
+| 54 | Include the agent/LangGraph implementation in the submitted repository. | 9. Deliverables / GitHub Repository | Mandatory | IMPLEMENTED — NOT FULLY VERIFIED | `agent/graph.py`, `agent/nodes/` | `pytest -q --disable-warnings` → 16 passed | Publication follows this session's commit. |
 | 55 | Include the RAG implementation in the submitted repository. | 9. Deliverables / GitHub Repository | Mandatory | DONE | `agent/rag.py`, `app/services/kb_service.py` | `git status -sb` → `main...origin/main` | Published on GitHub `main`. |
 | 56 | Include the Flask dashboard in the submitted repository. | 9. Deliverables / GitHub Repository | Mandatory | DONE | `app/blueprints/admin/`, `app/templates/admin/` | `git status -sb` → `main...origin/main` | Published on GitHub `main`. |
-| 57 | Include tool/function implementations in the submitted repository. | 9. Deliverables / GitHub Repository | Mandatory | NOT_STARTED | — | — | |
+| 57 | Include tool/function implementations in the submitted repository. | 9. Deliverables / GitHub Repository | Mandatory | IMPLEMENTED — NOT FULLY VERIFIED | `agent/tools.py`, `app/services/` | `pytest -q --disable-warnings` → 16 passed | Publication follows this session's commit. |
 | 58 | Include requirements/dependencies in the submitted repository. | 9. Deliverables / GitHub Repository | Mandatory | DONE | `requirements.txt` | `git status -sb` → `main...origin/main` | Published on GitHub `main`. |
 | 59 | Include a README explaining business, architecture, LangGraph, RAG, DB, tools, local run, env vars, conversations, limitations, and assumptions. | 9. Deliverables / README | Mandatory | NOT_STARTED | `README.md` | — | Atomic README topics will be checked in M9. |
 | 60 | Provide a runnable demo: conversation, understanding, RAG response, real action, dashboard result, and dashboard data updates. | 9. Deliverables / Demo | Mandatory | NOT_STARTED | — | — | |
