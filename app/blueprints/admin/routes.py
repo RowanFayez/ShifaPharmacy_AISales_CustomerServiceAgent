@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import re
 
 from flask import abort, flash, redirect, render_template, request, url_for
@@ -10,9 +11,13 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 
 from app.blueprints.admin import admin_bp
-from app.blueprints.admin.forms import CategoryForm, OrderStatusForm, ProductForm
+from app.blueprints.admin.forms import CategoryForm, KnowledgeDocumentForm, OrderStatusForm, ProductForm
 from app.extensions import db
-from app.models import Category, Customer, Order, OrderItem, Product
+from app.models import Category, Customer, KnowledgeDocument, Order, OrderItem, Product
+from app.services import kb_service
+
+
+logger = logging.getLogger(__name__)
 
 
 def slugify(value: str) -> str:
@@ -38,6 +43,12 @@ def dashboard():
         product_count=db.session.scalar(select(func.count()).select_from(Product)),
         order_count=db.session.scalar(select(func.count()).select_from(Order)),
         customer_count=db.session.scalar(select(func.count()).select_from(Customer)),
+        knowledge_count=db.session.scalar(select(func.count()).select_from(KnowledgeDocument)),
+        unindexed_document_count=db.session.scalar(
+            select(func.count()).select_from(KnowledgeDocument).where(
+                KnowledgeDocument.active.is_(True), KnowledgeDocument.indexed_at.is_(None)
+            )
+        ),
     )
 
 
@@ -228,3 +239,93 @@ def customer_detail(customer_id: int):
     if customer is None:
         abort(404)
     return render_template("admin/customer_detail.html", customer=customer)
+
+
+@admin_bp.get("/knowledge")
+def knowledge_list():
+    documents = db.session.scalars(
+        select(KnowledgeDocument).order_by(KnowledgeDocument.updated_at.desc(), KnowledgeDocument.id.desc())
+    ).all()
+    return render_template("admin/knowledge.html", documents=documents)
+
+
+@admin_bp.route("/knowledge/new", methods=["GET", "POST"])
+def knowledge_create():
+    form = KnowledgeDocumentForm()
+    if form.validate_on_submit():
+        title = form.title.data.strip()
+        if db.session.scalar(select(KnowledgeDocument).where(KnowledgeDocument.title == title)):
+            form.title.errors.append("A knowledge document with this title already exists.")
+        else:
+            try:
+                kb_service.create_document(
+                    title=title,
+                    category=form.category.data.strip(),
+                    content=form.content.data.strip(),
+                    lang=form.lang.data,
+                    active=form.active.data,
+                )
+            except Exception:
+                logger.exception("Knowledge document was saved but could not be indexed")
+                flash("Document was saved but needs reindexing before retrieval can use it.", "warning")
+            else:
+                flash("Knowledge document created and indexed.", "success")
+            return redirect(url_for("admin.knowledge_list"))
+    return render_template("admin/knowledge_form.html", form=form, document=None)
+
+
+@admin_bp.route("/knowledge/<int:document_id>/edit", methods=["GET", "POST"])
+def knowledge_edit(document_id: int):
+    document = db.get_or_404(KnowledgeDocument, document_id)
+    form = KnowledgeDocumentForm(obj=document)
+    if form.validate_on_submit():
+        title = form.title.data.strip()
+        duplicate = db.session.scalar(
+            select(KnowledgeDocument).where(
+                KnowledgeDocument.title == title, KnowledgeDocument.id != document.id
+            )
+        )
+        if duplicate:
+            form.title.errors.append("A knowledge document with this title already exists.")
+        else:
+            try:
+                kb_service.update_document(
+                    document,
+                    title=title,
+                    category=form.category.data.strip(),
+                    content=form.content.data.strip(),
+                    lang=form.lang.data,
+                    active=form.active.data,
+                )
+            except Exception:
+                logger.exception("Knowledge document %s was saved but could not be indexed", document.id)
+                flash("Document was saved but needs reindexing before retrieval can use it.", "warning")
+            else:
+                flash("Knowledge document updated and index synchronized.", "success")
+            return redirect(url_for("admin.knowledge_list"))
+    return render_template("admin/knowledge_form.html", form=form, document=document)
+
+
+@admin_bp.post("/knowledge/<int:document_id>/delete")
+def knowledge_delete(document_id: int):
+    document = db.get_or_404(KnowledgeDocument, document_id)
+    try:
+        kb_service.delete_document(document)
+    except Exception:
+        logger.exception("Knowledge document %s could not be deleted from the index", document.id)
+        flash("Document could not be deleted because its index entry could not be removed.", "danger")
+    else:
+        flash("Knowledge document deleted.", "success")
+    return redirect(url_for("admin.knowledge_list"))
+
+
+@admin_bp.post("/knowledge/reindex")
+def knowledge_reindex():
+    try:
+        count = kb_service.reindex_all()
+    except Exception:
+        logger.exception("Knowledge-base reindex failed")
+        flash("Reindex failed. Existing document statuses were left unchanged.", "danger")
+    else:
+        flash(f"Reindexed {count} active knowledge documents.", "success")
+    return redirect(url_for("admin.knowledge_list"))

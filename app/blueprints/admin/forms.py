@@ -57,3 +57,16 @@ class OrderStatusForm(FlaskForm):
         validators=[DataRequired()],
     )
     submit = SubmitField("Update status")
+
+
+class KnowledgeDocumentForm(FlaskForm):
+    title = StringField("Title", validators=[DataRequired(), Length(max=200)])
+    category = StringField("Category", validators=[DataRequired(), Length(max=100)])
+    lang = SelectField(
+        "Content language",
+        choices=[("bilingual", "Bilingual"), ("en", "English"), ("ar", "Arabic")],
+        validators=[DataRequired()],
+    )
+    content = TextAreaField("Knowledge content", validators=[DataRequired(), Length(max=20000)])
+    active = BooleanField("Include in retrieval", default=True)
+    submit = SubmitField("Save knowledge document")

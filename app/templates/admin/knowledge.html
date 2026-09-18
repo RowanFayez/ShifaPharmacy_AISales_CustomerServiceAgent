@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block title %}Knowledge base · Shifa Pharmacy{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+  <div><h1 class="h3 mb-1">Knowledge base</h1><p class="text-muted mb-0">Source documents for policy and service retrieval. Prices and stock stay in the live catalogue.</p></div>
+  <div class="d-flex gap-2">
+    <form method="post" action="{{ url_for('admin.knowledge_reindex') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-outline-success" onclick="return confirm('Rebuild the index from all active documents?')">Reindex active documents</button></form>
+    <a class="btn btn-success" href="{{ url_for('admin.knowledge_create') }}">Add knowledge</a>
+  </div>
+</div>
+<div class="table-responsive"><table class="table align-middle"><thead><tr><th>Title</th><th>Category</th><th>Language</th><th>Retrieval status</th><th>Updated</th><th></th></tr></thead><tbody>
+{% for document in documents %}
+<tr>
+  <td><strong>{{ document.title }}</strong><div class="small text-muted text-truncate" style="max-width: 360px">{{ document.content }}</div></td>
+  <td>{{ document.category }}</td><td>{{ document.lang }}</td>
+  <td>{% if not document.active %}<span class="badge text-bg-secondary">Inactive</span>{% elif document.indexed_at %}<span class="badge text-bg-success">Indexed</span>{% else %}<span class="badge text-bg-warning">Needs reindex</span>{% endif %}</td>
+  <td>{{ document.updated_at.strftime('%Y-%m-%d %H:%M') }}</td>
+  <td class="text-end"><a class="btn btn-sm btn-outline-secondary" href="{{ url_for('admin.knowledge_edit', document_id=document.id) }}">Edit</a><form class="d-inline" method="post" action="{{ url_for('admin.knowledge_delete', document_id=document.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this knowledge document?')">Delete</button></form></td>
+</tr>
+{% else %}<tr><td colspan="6" class="text-muted">No knowledge documents yet.</td></tr>{% endfor %}
+</tbody></table></div>
+{% endblock %}

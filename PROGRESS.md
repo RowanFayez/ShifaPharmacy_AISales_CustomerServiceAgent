@@ -1,9 +1,9 @@
 ## Current state
 
-M0–M3 are runtime-verified in the repository `.venv` (Python 3.12).
+M0–M4 are runtime-verified in the repository `.venv` (Python 3.12).
 SQLite migration and seed complete: 6 categories, 40 products (8 Rx), 3 customers, and 15 bilingual knowledge documents.
-The Flask-WTF M2 dashboard is covered by tests; M3 adds persistent Chroma, local multilingual E5 embeddings, Arabic normalization, cache invalidation, and KB CRUD sync.
-M4 knowledge admin, LangGraph, chat, and Messenger remain unimplemented.
+The Flask-WTF dashboard now includes knowledge-document CRUD, per-document index status, and a reindex action; its index synchronization is covered by offline tests.
+M3 adds persistent Chroma, local multilingual E5 embeddings, Arabic normalization, cache invalidation, and KB CRUD sync. LangGraph, chat, and Messenger remain unimplemented.
 
 ## Milestones
 
@@ -13,7 +13,7 @@ M4 knowledge admin, LangGraph, chat, and Messenger remain unimplemented.
 | M1 — Models, migrations, seed data, bilingual KB | DONE |
 | M2 — Core admin pages | DONE |
 | M3 — RAG and KB sync | DONE |
-| M4 — Knowledge admin | NOT_STARTED |
+| M4 — Knowledge admin | DONE |
 | M5 — Tools and services | NOT_STARTED |
 | M6 — LangGraph agent | NOT_STARTED |
 | M7 — Chat and persistence | NOT_STARTED |
@@ -23,7 +23,7 @@ M4 knowledge admin, LangGraph, chat, and Messenger remain unimplemented.
 
 ## Last session
 
-18 September 2026 · Installed Python 3.12 project venv, fixed M2 CSRF and SQLite-path defects, verified migration/seed and 8 tests · implemented M3 persistent Chroma RAG with E5 embedding cache, Arabic normalization, CRUD sync, reindex script, and real retrieval smoke test · configured verified fallback model `nex-agi/nex-n2.5-mini:free` · pushed M0–M3 to GitHub `main` (commit `c8a7013`).
+18 September 2026 · Re-verified M0–M3: clean migration/seed produced 6 categories, 40 products (8 Rx), 3 customers, and 15 knowledge documents; reindex rebuilt 15 documents; live delivery retrieval scored 0.8782. Reconciled stale Git evidence: checked-out GitHub `main` is `0fcfa4e`, not `c8a7013`. Primary OpenRouter tool-call and structured-JSON probes passed. Completed M4 knowledge CRUD, status, and reindex UI; targeted tests passed and full suite is 10 passed.
 
 ## Open blockers
 
@@ -32,4 +32,4 @@ M4 knowledge admin, LangGraph, chat, and Messenger remain unimplemented.
 
 ## Next up
 
-M4 — knowledge-management admin and index-status UI.
+M5 — business tools and service layer.

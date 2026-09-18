@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block title %}{{ 'Edit' if document else 'New' }} knowledge · Shifa Pharmacy{% endblock %}
+{% block content %}
+<h1 class="h3 mb-3">{{ 'Edit' if document else 'New' }} knowledge document</h1>
+<form method="post" class="card card-body form-card">{{ form.hidden_tag() }}
+  <div class="mb-3">{{ form.title.label(class_='form-label') }}{{ form.title(class_='form-control') }}{% for error in form.title.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}</div>
+  <div class="row"><div class="col-md-6 mb-3">{{ form.category.label(class_='form-label') }}{{ form.category(class_='form-control', placeholder='e.g. delivery, policy, vitamins') }}{% for error in form.category.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}</div><div class="col-md-6 mb-3">{{ form.lang.label(class_='form-label') }}{{ form.lang(class_='form-select') }}</div></div>
+  <div class="mb-3">{{ form.content.label(class_='form-label') }}{{ form.content(class_='form-control', rows=14, placeholder='Write clear customer-facing English and Arabic knowledge where applicable.') }}{% for error in form.content.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}</div>
+  <div class="form-check mb-3">{{ form.active(class_='form-check-input') }}{{ form.active.label(class_='form-check-label') }}<div class="form-text">Inactive documents remain saved but are removed from retrieval.</div></div>
+  {{ form.submit(class_='btn btn-success') }} <a class="btn btn-outline-secondary" href="{{ url_for('admin.knowledge_list') }}">Cancel</a>
+</form>
+{% endblock %}

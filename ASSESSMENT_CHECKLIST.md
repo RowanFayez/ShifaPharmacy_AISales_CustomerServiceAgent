@@ -19,26 +19,26 @@ Source of truth: `docs/assessment.pdf`. Evidence is added only after a command, 
 | 13 | Provide prices and other available information. | 1. AI Agent / Sales | Mandatory | NOT_STARTED | — | — | |
 | 14 | Help the customer make a decision. | 1. AI Agent / Sales | Mandatory | NOT_STARTED | — | — | |
 | 15 | Perform at least one real business action. | 1. AI Agent / Sales | Mandatory | NOT_STARTED | — | — | |
-| 16 | Use RAG in the agent. | 2. RAG | Mandatory | DONE | `agent/rag.py`, `app/services/kb_service.py` | `pytest -q` → 8 passed; `scripts/reindex_kb.py` | Persistent Chroma derives from SQL knowledge rows. |
-| 17 | Keep business-relevant information in the knowledge base. | 2. RAG | Mandatory | DONE | `data/knowledge/`, `scripts/seed_db.py` | Seed verification → 15 documents; `scripts/reindex_kb.py` → 15 indexed | Bilingual source documents are seeded into `KnowledgeDocument`. |
-| 18 | Retrieve relevant knowledge-base information when answering customers. | 2. RAG | Mandatory | DONE | `agent/rag.py` | Real smoke test: delivery-fee query → `Delivery areas and fees` | Agent integration is deferred to M6. |
-| 19 | Allow an administrator to add knowledge/data. | 2. RAG / RAG Management | Mandatory | NOT_STARTED | — | — | |
-| 20 | Allow an administrator to update existing knowledge/data. | 2. RAG / RAG Management | Mandatory | NOT_STARTED | — | — | |
-| 21 | Allow an administrator to delete knowledge/data. | 2. RAG / RAG Management | Mandatory | NOT_STARTED | — | — | |
-| 22 | Use updated knowledge/data in the agent retrieval process. | 2. RAG / RAG Management | Mandatory | NOT_STARTED | — | — | |
+| 16 | Use RAG in the agent. | 2. RAG | Mandatory | IMPLEMENTED — NOT FULLY VERIFIED | `agent/rag.py`, `app/services/kb_service.py` | `pytest -q` → 10 passed; `scripts/reindex_kb.py` → 15 indexed (18 Sep) | RAG is verified directly; LangGraph integration is M6. |
+| 17 | Keep business-relevant information in the knowledge base. | 2. RAG | Mandatory | DONE | `data/knowledge/`, `scripts/seed_db.py` | Clean seed → 15 documents; reindex → 15 indexed (18 Sep) | Bilingual source documents are seeded into `KnowledgeDocument`. |
+| 18 | Retrieve relevant knowledge-base information when answering customers. | 2. RAG | Mandatory | IMPLEMENTED — NOT FULLY VERIFIED | `agent/rag.py` | Live delivery-fee query → `Delivery areas and fees`, score `0.8782` (18 Sep) | Direct retrieval is verified; customer-agent integration is M6. |
+| 19 | Allow an administrator to add knowledge/data. | 2. RAG / RAG Management | Mandatory | DONE | `admin.knowledge_create`, `kb_service.create_document` | `tests/test_knowledge_admin.py` → 2 passed | Validated form creates and indexes a document. |
+| 20 | Allow an administrator to update existing knowledge/data. | 2. RAG / RAG Management | Mandatory | DONE | `admin.knowledge_edit`, `kb_service.update_document` | `tests/test_knowledge_admin.py` → 2 passed | Edit synchronizes the derived index. |
+| 21 | Allow an administrator to delete knowledge/data. | 2. RAG / RAG Management | Mandatory | DONE | `admin.knowledge_delete`, `kb_service.delete_document` | `tests/test_knowledge_admin.py` → 2 passed | Delete removes both SQL and index data. |
+| 22 | Use updated knowledge/data in the agent retrieval process. | 2. RAG / RAG Management | Mandatory | IMPLEMENTED — NOT FULLY VERIFIED | `kb_service.update_document`, `agent/rag.py` | `tests/test_rag.py` and `tests/test_knowledge_admin.py` | Update reaches direct retrieval; LangGraph use is M6. |
 | 23 | Implement the agent using LangGraph. | 3. LangGraph | Mandatory | NOT_STARTED | — | — | |
 | 24 | Give the LangGraph a meaningful workflow, not one LLM call. | 3. LangGraph | Mandatory | NOT_STARTED | — | — | |
 | 25 | Perform an action using a tool/function. | 4. Business Action / Function Calling | Mandatory | NOT_STARTED | — | — | |
 | 26 | Make the tool/function action appropriate to the selected business. | 4. Business Action / Function Calling | Mandatory | NOT_STARTED | — | — | |
 | 27 | Make the action interact with the backend/database rather than return a fake LLM response. | 4. Business Action / Function Calling | Mandatory | NOT_STARTED | — | — | |
-| 28 | Build an administration dashboard using Flask and Flask templates. | 5. Flask Dashboard | Mandatory | DONE | `app/blueprints/admin/`, `app/templates/admin/` | `pytest -q` → 8 passed | M2 routes are runtime-tested; knowledge routes are M4. |
+| 28 | Build an administration dashboard using Flask and Flask templates. | 5. Flask Dashboard | Mandatory | DONE | `app/blueprints/admin/`, `app/templates/admin/` | `pytest -q --disable-warnings` → 10 passed | M2 routes and M4 knowledge UI are runtime-tested. |
 | 29 | Let an administrator see and manage the system. | 5. Flask Dashboard | Mandatory | DONE | `app/blueprints/admin/routes.py` | `pytest -q` → 8 passed | M2 scope covers categories, products, orders, and customers. |
 | 30 | Display business data relevant to the selected business. | 5. Flask Dashboard / Business Data | Mandatory | DONE | `app/templates/admin/` | `pytest -q` → 8 passed | Core business data routes are tested. |
-| 31 | Let an administrator view RAG data. | 5. Flask Dashboard / RAG Data Management | Mandatory | NOT_STARTED | — | — | |
-| 32 | Let an administrator add RAG data. | 5. Flask Dashboard / RAG Data Management | Mandatory | NOT_STARTED | — | — | |
-| 33 | Let an administrator edit RAG data. | 5. Flask Dashboard / RAG Data Management | Mandatory | NOT_STARTED | — | — | |
-| 34 | Let an administrator delete RAG data. | 5. Flask Dashboard / RAG Data Management | Mandatory | NOT_STARTED | — | — | |
-| 35 | Demonstrate knowledge-base management without source-code changes. | 5. Flask Dashboard / RAG Data Management | Mandatory | NOT_STARTED | — | — | |
+| 31 | Let an administrator view RAG data. | 5. Flask Dashboard / RAG Data Management | Mandatory | DONE | `admin.knowledge_list`, `admin/knowledge.html` | `tests/test_knowledge_admin.py` → 2 passed | Shows title, category, language, active/index state, and content preview. |
+| 32 | Let an administrator add RAG data. | 5. Flask Dashboard / RAG Data Management | Mandatory | DONE | `admin.knowledge_create`, `admin/knowledge_form.html` | `tests/test_knowledge_admin.py` → 2 passed | Flask-WTF validation and CSRF form are present. |
+| 33 | Let an administrator edit RAG data. | 5. Flask Dashboard / RAG Data Management | Mandatory | DONE | `admin.knowledge_edit`, `admin/knowledge_form.html` | `tests/test_knowledge_admin.py` → 2 passed | Form rendering and update/index synchronization are tested. |
+| 34 | Let an administrator delete RAG data. | 5. Flask Dashboard / RAG Data Management | Mandatory | DONE | `admin.knowledge_delete`, `kb_service.delete_document` | `tests/test_knowledge_admin.py` → 2 passed | Index and database deletion are tested together. |
+| 35 | Demonstrate knowledge-base management without source-code changes. | 5. Flask Dashboard / RAG Data Management | Mandatory | DONE | `admin.knowledge_*`, `admin/knowledge.html` | `tests/test_knowledge_admin.py` → 2 passed | UI test covers create, edit, reindex, status, and delete. |
 | 36 | Use a database. | 6. Database | Mandatory | DONE | `app/config.py`, `migrations/` | `flask db upgrade`; seeded DB count verification | SQLite database migrated and seeded. |
 | 37 | Use an ORM. | 6. Database | Mandatory | DONE | `app/models/`, `app/extensions.py` | `pytest -q` → 8 passed | SQLAlchemy 2.x typed models. |
 | 38 | Store required business entities. | 6. Database | Mandatory | DONE | `app/models/catalog.py`, `app/models/sales.py` | Seed count verification | 6 categories, 40 products, 3 customers, sample order. |
@@ -55,13 +55,13 @@ Source of truth: `docs/assessment.pdf`. Evidence is added only after a command, 
 | 49 | Use CSS in the frontend. | 7. Required Technology Stack / Frontend | Mandatory | DONE | `app/static/css/admin.css` | `pytest -q` → 8 passed | |
 | 50 | Use JavaScript where needed in the frontend. | 7. Required Technology Stack / Frontend | Mandatory | NOT_STARTED | — | — | |
 | 51 | Submit a GitHub repository containing the complete project. | 9. Deliverables / GitHub Repository | Mandatory | NOT_STARTED | — | — | External publication required. |
-| 52 | Include source code in the submitted repository. | 9. Deliverables / GitHub Repository | Mandatory | DONE | GitHub `main` | `git push -u origin main` | Published in commit `c8a7013`. |
-| 53 | Include database models in the submitted repository. | 9. Deliverables / GitHub Repository | Mandatory | DONE | `app/models/` | `git push -u origin main` | Published in commit `c8a7013`. |
+| 52 | Include source code in the submitted repository. | 9. Deliverables / GitHub Repository | Mandatory | DONE | GitHub `main` | `git status -sb` → `main...origin/main`; HEAD `0fcfa4e` | Published on GitHub `main`. |
+| 53 | Include database models in the submitted repository. | 9. Deliverables / GitHub Repository | Mandatory | DONE | `app/models/` | `git status -sb` → `main...origin/main`; HEAD `0fcfa4e` | Published on GitHub `main`. |
 | 54 | Include the agent/LangGraph implementation in the submitted repository. | 9. Deliverables / GitHub Repository | Mandatory | NOT_STARTED | — | — | |
-| 55 | Include the RAG implementation in the submitted repository. | 9. Deliverables / GitHub Repository | Mandatory | DONE | `agent/rag.py`, `app/services/kb_service.py` | `git push -u origin main` | Published in commit `c8a7013`. |
-| 56 | Include the Flask dashboard in the submitted repository. | 9. Deliverables / GitHub Repository | Mandatory | DONE | `app/blueprints/admin/`, `app/templates/admin/` | `git push -u origin main` | Published in commit `c8a7013`. |
+| 55 | Include the RAG implementation in the submitted repository. | 9. Deliverables / GitHub Repository | Mandatory | DONE | `agent/rag.py`, `app/services/kb_service.py` | `git status -sb` → `main...origin/main`; HEAD `0fcfa4e` | Published on GitHub `main`. |
+| 56 | Include the Flask dashboard in the submitted repository. | 9. Deliverables / GitHub Repository | Mandatory | DONE | `app/blueprints/admin/`, `app/templates/admin/` | `git status -sb` → `main...origin/main`; HEAD `0fcfa4e` | Published on GitHub `main`. |
 | 57 | Include tool/function implementations in the submitted repository. | 9. Deliverables / GitHub Repository | Mandatory | NOT_STARTED | — | — | |
-| 58 | Include requirements/dependencies in the submitted repository. | 9. Deliverables / GitHub Repository | Mandatory | DONE | `requirements.txt` | `git push -u origin main` | Published in commit `c8a7013`. |
+| 58 | Include requirements/dependencies in the submitted repository. | 9. Deliverables / GitHub Repository | Mandatory | DONE | `requirements.txt` | `git status -sb` → `main...origin/main`; HEAD `0fcfa4e` | Published on GitHub `main`. |
 | 59 | Include a README explaining business, architecture, LangGraph, RAG, DB, tools, local run, env vars, conversations, limitations, and assumptions. | 9. Deliverables / README | Mandatory | NOT_STARTED | `README.md` | — | Atomic README topics will be checked in M9. |
 | 60 | Provide a runnable demo: conversation, understanding, RAG response, real action, dashboard result, and dashboard data updates. | 9. Deliverables / Demo | Mandatory | NOT_STARTED | — | — | |
 | 61 | Be able to explain, test, and modify the implementation in the interview. | 10. AI Usage Policy | Mandatory | NOT_STARTED | `docs/DECISIONS.md` | — | |
