@@ -1,0 +1,5 @@
+flowchart LR
+  Reasoner[Reasoner: validated Plan] --> Executor[Executor: RAG, catalog, tools]
+  Executor --> Gates[Deterministic Rx, confirmation, safety gates]
+  Gates --> Synthesizer[Synthesizer: fact-bound response]
+  Synthesizer --> Guardrail[Final safety guardrail]

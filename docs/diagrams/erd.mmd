@@ -1,0 +1,9 @@
+erDiagram
+  CATEGORY ||--o{ PRODUCT : contains
+  CUSTOMER ||--o{ ORDER : places
+  ORDER ||--|{ ORDER_ITEM : includes
+  PRODUCT ||--o{ ORDER_ITEM : snapshot
+  CUSTOMER ||--o{ CONVERSATION : has
+  CONVERSATION ||--o{ MESSAGE : records
+  CONVERSATION ||--o{ HANDOFF : escalates
+  CUSTOMER ||--o{ LEAD : requests

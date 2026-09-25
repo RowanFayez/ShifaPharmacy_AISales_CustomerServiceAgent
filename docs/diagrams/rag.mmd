@@ -1,0 +1,5 @@
+flowchart LR
+  KnowledgeDocument --> KBService[kb_service] --> Chunks --> Chroma
+  AdminCRUD --> KBService
+  Query --> Normalize --> Chroma --> ScoreFloor --> Agent
+  KBService --> ClearRetrievalCache

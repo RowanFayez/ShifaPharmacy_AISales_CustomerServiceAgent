@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block title %}Chat · Shifa Pharmacy{% endblock %}
+{% block content %}
+<section class="col-lg-8 mx-auto"><h1 class="h3">Shifa Pharmacy assistant | مساعد صيدلية شفاء</h1><p class="text-muted">Ask about products, price, stock, delivery, policies, or an order. اسأل عن الأدوية والسعر والتوفر والتوصيل والطلبات.</p>
+<div id="messages" class="card mb-3 p-3 chat-messages" aria-live="polite"><div class="chat-bubble assistant">Hello! How can I help today? | أهلاً! أقدر أساعدك إزاي؟</div></div>
+<section class="quick-actions card card-body mb-3" aria-label="Quick pharmacy options">
+  <p class="mb-2 fw-semibold">ابدأ باختيار ما تحتاجه | Quick options</p>
+  <div id="quick-actions" class="d-flex flex-wrap gap-2">
+    <button class="btn btn-outline-success btn-sm" type="button" data-prompt="ما هي رسوم ووقت التوصيل؟">التوصيل</button>
+    <button class="btn btn-outline-success btn-sm" type="button" data-prompt="ما هي الفروع ومواعيد العمل؟">الفروع والمواعيد</button>
+    <button class="btn btn-outline-success btn-sm" type="button" data-prompt="ما هي طرق الدفع؟">طرق الدفع</button>
+  </div>
+</section>
+<form id="chat-form" class="d-flex gap-2"><input id="chat-message" class="form-control" maxlength="2000" required placeholder="Type your message / اكتب رسالتك…" aria-label="Message"><button class="btn btn-success" type="submit">Send | إرسال</button></form>
+</section>
+<script>
+const form=document.getElementById('chat-form'),input=document.getElementById('chat-message'),messages=document.getElementById('messages'),quickActions=document.getElementById('quick-actions');
+function bubble(text,role){const e=document.createElement('div');e.className='chat-bubble '+role;e.textContent=text;messages.append(e);messages.scrollTop=messages.scrollHeight;}
+const arabicCategoryNames={'pain-relief-cold':'مسكنات وأدوية البرد','vitamins-supplements':'فيتامينات ومكملات','baby-care':'العناية بالأطفال','personal-care':'العناية الشخصية','diabetes-care':'مستلزمات السكري','medical-devices':'أجهزة طبية'};
+async function sendMessage(text){if(!text)return;bubble(text,'customer');input.value='';const button=form.querySelector('button');button.disabled=true;try{const response=await fetch('{{ url_for("chat.chat_api") }}',{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':'{{ csrf_token() }}'},body:JSON.stringify({message:text})});const data=await response.json();bubble(data.ok?data.reply:data.error,'assistant');}catch{bubble('Connection problem. Please try again.','assistant');}finally{button.disabled=false;input.focus();}}
+form.addEventListener('submit',event=>{event.preventDefault();sendMessage(input.value.trim());});
+quickActions.addEventListener('click',event=>{const button=event.target.closest('[data-prompt]');if(button)sendMessage(button.dataset.prompt);});
+fetch('{{ url_for("chat.catalog_categories") }}').then(response=>response.json()).then(data=>{if(!data.ok)return;data.categories.forEach(category=>{const button=document.createElement('button');button.type='button';button.className='btn btn-outline-primary btn-sm';button.dataset.prompt=`اعرض منتجات ${arabicCategoryNames[category.slug]||category.name}`;button.textContent=arabicCategoryNames[category.slug]||category.name;quickActions.append(button);});}).catch(()=>{});
+</script>{% endblock %}

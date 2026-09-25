@@ -1,0 +1,4 @@
+flowchart LR
+  Request --> Catalog --> RxGate
+  RxGate -- Rx --> PrescriptionLead
+  RxGate -- OTC --> Confirmation --> CreateOrder --> Transaction[price + stock + order] --> Result

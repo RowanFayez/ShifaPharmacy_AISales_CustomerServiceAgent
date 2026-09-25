@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block title %}{{ 'Edit' if product else 'New' }} product · Shifa Pharmacy{% endblock %}
+{% block content %}
+<h1 class="h3 mb-3">{{ 'Edit' if product else 'New' }} product</h1>
+<form method="post" class="card card-body form-card">{{ form.hidden_tag() }}
+  {% for field in [form.sku, form.name, form.name_ar, form.generic_name, form.brand] %}<div class="mb-3">{{ field.label(class_='form-label') }}{{ field(class_='form-control') }}{% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}</div>{% endfor %}
+  <div class="mb-3">{{ form.aliases.label(class_='form-label') }}{{ form.aliases(class_='form-control', rows=2, placeholder='Comma-separated English and Arabic search aliases') }}</div>
+  <div class="row"><div class="col-md-4 mb-3">{{ form.category_id.label(class_='form-label') }}{{ form.category_id(class_='form-select') }}</div><div class="col-md-4 mb-3">{{ form.price.label(class_='form-label') }}{{ form.price(class_='form-control') }}{% for error in form.price.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}</div><div class="col-md-4 mb-3">{{ form.stock_quantity.label(class_='form-label') }}{{ form.stock_quantity(class_='form-control') }}{% for error in form.stock_quantity.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}</div></div>
+  <div class="mb-3">{{ form.short_description.label(class_='form-label') }}{{ form.short_description(class_='form-control', rows=3) }}</div>
+  <div class="form-check mb-2">{{ form.requires_prescription(class_='form-check-input') }}{{ form.requires_prescription.label(class_='form-check-label') }}</div><div class="form-check mb-3">{{ form.active(class_='form-check-input') }}{{ form.active.label(class_='form-check-label') }}</div>
+  {{ form.submit(class_='btn btn-success') }} <a class="btn btn-outline-secondary" href="{{ url_for('admin.product_list') }}">Cancel</a>
+</form>
+{% endblock %}

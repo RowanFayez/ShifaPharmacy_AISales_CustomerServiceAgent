@@ -1,0 +1,9 @@
+body { background: #f8faf9; }
+.stat-card { border-color: #d7e7dc; color: inherit; }
+.stat-card:hover { border-color: #198754; box-shadow: 0 .25rem .75rem rgba(25, 135, 84, .12); }
+.form-card { max-width: 760px; }
+.chat-messages { min-height: 22rem; max-height: 28rem; overflow-y: auto; background: #f8f9fa; }
+.chat-bubble { max-width: 82%; padding: .65rem .85rem; border-radius: .75rem; margin-bottom: .6rem; white-space: pre-wrap; }
+.chat-bubble.customer { margin-left: auto; background: #198754; color: white; }
+.chat-bubble.assistant { margin-right: auto; background: white; border: 1px solid #dee2e6; }
+.quick-actions .btn { white-space: normal; }

@@ -1,0 +1,16 @@
+flowchart TD
+  START --> Context[load_context] --> Reasoner
+  Reasoner -->|sales| Catalog --> RxGate
+  RxGate -->|Rx| Synthesis
+  RxGate -->|OTC order| Confirm -->|confirmed| CreateOrder
+  RxGate -->|catalog answer| RAG
+  Reasoner -->|customer service| RAG
+  Reasoner -->|order status| OrderStatus
+  Reasoner -->|safety| Safety
+  Reasoner -->|escalation| Escalate
+  RAG --> Synthesis
+  CreateOrder --> Synthesis
+  OrderStatus --> Synthesis
+  Safety --> Synthesis
+  Escalate --> Synthesis
+  Synthesis --> Guardrail --> Persist --> END

@@ -1,0 +1,6 @@
+{% extends 'base.html' %}
+{% block title %}Orders · Shifa Pharmacy{% endblock %}
+{% block content %}
+<h1 class="h3 mb-3">Orders</h1><form class="mb-3"><select class="form-select w-auto d-inline" name="status"><option value="">All statuses</option>{% for value, label in [('pending','Pending'),('confirmed','Confirmed'),('preparing','Preparing'),('out_for_delivery','Out for delivery'),('delivered','Delivered'),('cancelled','Cancelled')] %}<option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select><button class="btn btn-outline-secondary ms-1">Filter</button></form>
+<div class="table-responsive"><table class="table align-middle"><thead><tr><th>Order</th><th>Customer</th><th>Status</th><th>Total</th><th>Created</th></tr></thead><tbody>{% for order in orders %}<tr><td><a href="{{ url_for('admin.order_detail', order_id=order.id) }}">{{ order.order_number }}</a></td><td>{{ order.customer.full_name }}</td><td><span class="badge text-bg-secondary">{{ order.status.replace('_', ' ') }}</span></td><td>EGP {{ '%.2f'|format(order.total) }}</td><td>{{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</td></tr>{% else %}<tr><td colspan="5" class="text-muted">No orders found.</td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}

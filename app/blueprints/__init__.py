@@ -1,0 +1,2 @@
+"""Flask blueprint package."""
+

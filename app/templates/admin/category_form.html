@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block title %}{{ 'Edit' if category else 'New' }} category · Shifa Pharmacy{% endblock %}
+{% block content %}
+<h1 class="h3 mb-3">{{ 'Edit' if category else 'New' }} category</h1>
+<form method="post" class="card card-body form-card">{{ form.hidden_tag() }}
+  <div class="mb-3">{{ form.name.label(class_='form-label') }}{{ form.name(class_='form-control') }}{% for error in form.name.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}</div>
+  <div class="mb-3">{{ form.slug.label(class_='form-label') }}{{ form.slug(class_='form-control') }}<div class="form-text">Optional; generated from the name when empty.</div>{% for error in form.slug.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}</div>
+  <div class="mb-3">{{ form.description.label(class_='form-label') }}{{ form.description(class_='form-control', rows=3) }}</div>
+  <div class="form-check mb-3">{{ form.active(class_='form-check-input') }}{{ form.active.label(class_='form-check-label') }}</div>
+  {{ form.submit(class_='btn btn-success') }} <a class="btn btn-outline-secondary" href="{{ url_for('admin.category_list') }}">Cancel</a>
+</form>
+{% endblock %}

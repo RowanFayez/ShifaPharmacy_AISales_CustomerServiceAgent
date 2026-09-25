@@ -1,0 +1,5 @@
+SAFETY = "I can't diagnose a condition, choose a treatment, or give dosage advice. Please speak with a pharmacist; I can still show available cold products if you name one or want to browse the category."
+RX = "A valid prescription is required before this medicine can be ordered. I have logged a prescription request."
+CONFIRM = "Please confirm this order before I create it."
+UNKNOWN = "I don't have verified information for that. I can connect you with a pharmacist."
+ORDER_CREATED = "Your order {order_number} has been created."

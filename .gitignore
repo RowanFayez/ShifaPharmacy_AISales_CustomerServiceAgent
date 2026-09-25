@@ -1,0 +1,22 @@
+.env
+.venv/
+venv/
+__pycache__/
+.pytest_cache/
+*.py[cod]
+*.db
+instance/
+data/cache/
+data/chroma/
+data/*.db
+.diagram-renderer/
+debug.log
+docs/diagrams/*.md
+
+# Local assessment notes and generated documentation; publish only the root README.
+*.md
+!README.md
+
+/ASSESSMENT_CHECKLIST.md
+/PROGRESS.md
+flask-server*.log
