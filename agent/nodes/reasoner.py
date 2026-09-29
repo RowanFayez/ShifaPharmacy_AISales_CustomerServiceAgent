@@ -22,6 +22,7 @@ def _is_catalog_question(text: str) -> bool:
         "panadol", "advil", "brufen", "augmentin", "vitamin", "cold", "flu",
         "medicine", "medicines", "available", "in stock", "price", "how much",
         "category", "categories", "vitamins", "supplements", "baby", "personal care", "diabetes", "device",
+        "skin", "skin care", "skincare", "cream", "moisturizer", "بانادول", "بنادول", "كريم", "بشرة", "بشره", "جلد",
         "باناد", "ادفيل", "بروفين", "اوجمنتين", "فيتامين", "دواء", "دوا", "ادوية", "ادويه",
         "البرد", "انفلونزا", "متوفر", "موجود", "بكام", "سعر", "فئات", "كاتيجوري", "اقسام",
         "طفل", "اطفال", "عناية", "سكري", "اجهزة", "مسكنات",
@@ -56,6 +57,11 @@ def _is_thanks(text: str) -> bool:
     lowered = normalize_for_retrieval(text).strip()
     return lowered in {"thanks", "thank you", "شكرا", "شكرًا", "متشكر", "تسلم"}
 
+def _is_acknowledgement(text: str) -> bool:
+    lowered = normalize_for_retrieval(text).strip()
+    return lowered in {"تمام", "ماشي", "حاضر", "اوكي", "أوكي", "okay", "ok"}
+
+
 def _has_product_ordinal_question(text: str) -> bool:
     lowered = normalize_for_retrieval(text)
     ordinal = ("first", "second", "third", "fourth", "الأول", "الاول", "التاني", "الثاني", "التالت", "الثالث", "الرابع")
@@ -66,7 +72,11 @@ def reasoner(state):
     text, language = _message(state), state.get("language") or "en"
     if not text: plan = Plan(intent="chitchat", language=language, rationale="empty message")
     elif _is_greeting(text): plan = Plan(intent="chitchat", language=language, rationale="greeting")
-    elif _is_thanks(text): plan = Plan(intent="chitchat", language=language, rationale="thanks")
+    elif _is_thanks(text) or (
+        _is_acknowledgement(text)
+        and not state.get("pending_action")
+        and state.get("order_stage") not in {"collect_details", "awaiting_confirmation"}
+    ): plan = Plan(intent="chitchat", language=language, rationale="thanks")
     elif state.get("symptom_tier") == "tier1":
         plan = Plan(
             intent="sales", language=language, needs_catalog_lookup=True,

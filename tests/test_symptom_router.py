@@ -5,6 +5,7 @@ from uuid import uuid4
 from agent.graph import build_graph
 from agent.nodes.reasoner import reasoner
 from agent.nodes.symptom_router import classify_symptom
+from agent.nodes.synthesizer import _symptom_disclaimer
 
 
 @pytest.mark.parametrize("message", [
@@ -85,3 +86,46 @@ def test_egyptian_order_intent_is_not_lost_in_catalog_routing():
     plan = reasoner({"messages": [HumanMessage(content="عايز فيتامين")], "language": "masri"})["plan"]
     assert plan["intent"] == "sales"
     assert plan["wants_to_order"] is True
+
+
+@pytest.mark.parametrize("opening,answer", [
+    ("do you have something for backpain", "no just mild pain in the back"),
+    ("هل عندكم حاجة لوجع الظهر؟", "لا، مجرد وجع بسيط في الظهر"),
+    ("عندك حاجة لوجع الضهر؟", "لأ بس وجع خفيف في ضهري"),
+])
+def test_symptom_clarification_answer_routes_to_catalog_within_two_turns(app, pharmacy_data, opening, answer):
+    thread_id = f"symptom-clarification-transcript:{uuid4()}"
+    with app.app_context():
+        graph = build_graph()
+        first = graph.invoke(
+            {"messages": [HumanMessage(content=opening)], "conversation_id": None},
+            config={"configurable": {"thread_id": thread_id}},
+        )
+        second = graph.invoke(
+            {"messages": [HumanMessage(content=answer)], "conversation_id": None},
+            config={"configurable": {"thread_id": thread_id}},
+        )
+    assert first["symptom_tier"] == "clarify"
+    assert first["awaiting_symptom_clarification"] is True
+    assert second["symptom_tier"] == "tier1"
+    assert second["awaiting_symptom_clarification"] is False
+    assert second["catalog_results"]
+    assert _symptom_disclaimer(second["language"]) in second["response"]
+    assert second["response"] != first["response"]
+
+
+def test_ambiguous_clarification_answer_escalates_without_repeating_question(app):
+    thread_id = f"symptom-clarification-cap:{uuid4()}"
+    with app.app_context():
+        graph = build_graph()
+        graph.invoke(
+            {"messages": [HumanMessage(content="do you have something for backpain")], "conversation_id": None},
+            config={"configurable": {"thread_id": thread_id}},
+        )
+        result = graph.invoke(
+            {"messages": [HumanMessage(content="maybe")], "conversation_id": None},
+            config={"configurable": {"thread_id": thread_id}},
+        )
+    assert result["symptom_tier"] == "tier2"
+    assert result["needs_human"] is True
+    assert "Are the symptoms mild" not in result["response"]

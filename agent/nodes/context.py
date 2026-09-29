@@ -32,6 +32,8 @@ def load_context(state):
     text = _text(state)
     offered_product = state.get("last_catalog_product")
     previous_catalog_results = state.get("last_catalog_results") or []
+    awaiting_symptom_clarification = bool(state.get("awaiting_symptom_clarification"))
+    symptom_clarification_rounds = int(state.get("symptom_clarification_rounds") or 0)
     offer_accepted = bool(offered_product and _accepts_catalog_offer(text))
     previous_stage = state.get("order_stage")
     if offer_accepted:
@@ -51,7 +53,9 @@ def load_context(state):
         "language": detect_language(_text(state)), "retrieved": [], "catalog_results": [],
         "tool_results": [], "error": None, "response": None, "safety_flag": None,
         "needs_human": False, "pending_action": pending_action, "symptom_tier": None,
-        "symptom_category": None, "last_catalog_product": offered_product,
+        "symptom_category": None, "awaiting_symptom_clarification": awaiting_symptom_clarification,
+        "symptom_clarification_rounds": symptom_clarification_rounds,
+        "last_catalog_product": offered_product, "catalog_exact_match": None,
         "last_catalog_results": previous_catalog_results, "product_focus": None,
         "is_first_turn": bool(state.get("is_first_turn")), "channel": state.get("channel"),
         "offer_accepted": offer_accepted, "order_stage": order_stage, "order_draft": order_draft,

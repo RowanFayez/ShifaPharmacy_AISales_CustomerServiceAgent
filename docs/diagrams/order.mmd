@@ -1,4 +1,8 @@
 flowchart LR
-  Request --> Catalog --> RxGate
+  Request --> Intent[Intent + context]
+  Intent --> Catalog[Exact SQL search]
+  Catalog --> Approx[Approximate alternatives\nnot orderable]
+  Catalog --> RxGate
   RxGate -- Rx --> PrescriptionLead
-  RxGate -- OTC --> Confirmation --> CreateOrder --> Transaction[price + stock + order] --> Result
+  RxGate -- OTC --> Confirmation --> Details[Name + phone + address]
+  Details --> CreateOrder --> Transaction[price + stock + order] --> Result

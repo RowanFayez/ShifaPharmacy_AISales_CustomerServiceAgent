@@ -14,12 +14,13 @@ def route_plan(state):
     rationale = (state.get("plan") or {}).get("rationale")
     if rationale == "product info follow-up": return "executor_product_info"
     if rationale == "order intent without product": return "synthesizer"
+    if intent == "chitchat": return "synthesizer"
     return "safety_handler" if intent == "safety" else "escalation_exec" if intent == "escalation" else "executor_order_status" if intent == "order_status" else "confirmation_gate" if intent == "order_action" else "executor_catalog" if intent == "sales" else "executor_rag"
 def route_symptom(state):
     tier = state.get("symptom_tier")
     return "safety_handler" if tier == "tier2" else "synthesizer" if tier == "clarify" else "reasoner"
 def route_after_order_details(state): return "synthesizer" if state.get("order_details_handled") else "symptom_router"
-def route_after_catalog(state): return "safety_handler" if state.get("safety_flag") == "rx_required" else "confirmation_gate" if (state.get("plan") or {}).get("wants_to_order") else "synthesizer"
+def route_after_catalog(state): return "safety_handler" if state.get("safety_flag") == "rx_required" else "synthesizer" if state.get("catalog_exact_match") is False else "confirmation_gate" if (state.get("plan") or {}).get("wants_to_order") else "synthesizer"
 def route_confirmation(state): return "executor_tools" if (state.get("plan") or {}).get("confirming_previous_action") else "synthesizer"
 def build_graph(checkpointer=None):
     if checkpointer is None:

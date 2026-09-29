@@ -10,6 +10,7 @@ Shifa Pharmacy is a bilingual online-pharmacy demo for OTC and prescription medi
 - SQL-backed product search, availability, order status, prescription requests, pharmacist escalation, and real order creation.
 - An order computes price and delivery from live SQL data and decrements stock in one transaction. Prescription products are rejected in data, service, and graph layers.
 - English, Arabic, and Egyptian Arabic detection with deterministic safety, prescription, and confirmation messages.
+- Grounded conversational replies with live-fact validation: generated prices, stock counts, and other numbers must come from the current SQL/RAG evidence or the deterministic fallback is used.
 
 ## Architecture
 
@@ -29,12 +30,17 @@ flowchart LR
 
 ```mermaid
 flowchart TD
-  START --> Context[load_context] --> Reasoner
+  START --> Context[load_context] --> OrderDetails --> Symptoms[Symptom router]
+  Symptoms -->|tier 2| Safety
+  Symptoms -->|clarify| Synthesis
+  Symptoms -->|catalog or general| Reasoner
   Reasoner -->|sales| Catalog --> RxGate
-  RxGate -->|Rx| Synthesis
+  RxGate -->|Rx| Safety
   RxGate -->|OTC order| Confirm -->|confirmed| CreateOrder
   RxGate -->|catalog answer| Synthesis
+  Catalog -->|approximate match| Synthesis
   Reasoner -->|customer service| RAG
+  Reasoner -->|chitchat| Synthesis
   Reasoner -->|order status| OrderStatus
   Reasoner -->|safety| Safety
   Reasoner -->|escalation| Escalate
@@ -43,7 +49,7 @@ flowchart TD
   OrderStatus --> Synthesis
   Safety --> Synthesis
   Escalate --> Synthesis
-  Synthesis --> Guardrail --> Persist --> END
+  Synthesis -->|grounded LLM or deterministic fallback| Guardrail --> Persist --> END
 ```
 
 ### Reasoner → Executor → Synthesizer
@@ -52,7 +58,10 @@ flowchart TD
 flowchart LR
   Reasoner[Reasoner: validated Plan] --> Executor[Executor: RAG, catalog, tools]
   Executor --> Gates[Deterministic Rx, confirmation, safety gates]
-  Gates --> Synthesizer[Synthesizer: fact-bound response]
+  Gates --> Evidence[Grounded evidence: SQL + RAG + memory]
+  Evidence --> Synthesizer[Synthesizer: natural LLM response]
+  Synthesizer --> Fallback[Deterministic fallback if unavailable]
+  Fallback --> Guardrail
   Synthesizer --> Guardrail[Final safety guardrail]
 ```
 
@@ -62,7 +71,10 @@ flowchart LR
 flowchart LR
   KnowledgeDocument --> KBService[kb_service] --> Chunks --> Chroma
   AdminCRUD --> KBService
-  Query --> Normalize --> Chroma --> ScoreFloor --> Agent
+  Query --> Normalize --> Chroma --> ScoreFloor --> Evidence[Grounded evidence]
+  SQL[Live SQL catalog, orders, stock] --> Evidence
+  Conversation[Checkpointer memory] --> Evidence
+  Evidence --> Agent[LLM or deterministic response]
   KBService --> ClearRetrievalCache
 ```
 
@@ -169,7 +181,7 @@ Messenger, and deployment setup. Ten image files are currently present under
 
 ## Environment and limitations
 
-`DATABASE_URL` configures SQLite (the SQLAlchemy 2.x models are portable to PostgreSQL). `OPENROUTER_API_KEY`, `LLM_MODEL`, and optional `LLM_FALLBACK_MODEL` configure structured classification. `CHROMA_PERSIST_DIRECTORY` points to the rebuildable vector store. Cache files are under `data/cache/` and ignored by Git.
+`DATABASE_URL` configures SQLite (the SQLAlchemy 2.x models are portable to PostgreSQL). `OPENROUTER_API_KEY`, `LLM_MODEL`, and optional `LLM_FALLBACK_MODEL` configure structured classification and grounded replies. `LLM_REQUEST_TIMEOUT` bounds model waits before deterministic fallback. `CHROMA_PERSIST_DIRECTORY` points to the rebuildable vector store. Cache files are under `data/cache/` and ignored by Git.
 
 The agent does not diagnose or give dosage advice. It creates a pharmacist handoff for medical questions. A prescription request is logged for Rx items and the order path remains blocked. It does not cache synthesizer output, live price, stock, or order data. SQLite is appropriate for the demo; a PostgreSQL deployment should use row locks for inventory contention. Messenger is intentionally deferred because it is the optional milestone.
 

@@ -1,10 +1,15 @@
 flowchart TD
-  START --> Context[load_context] --> Reasoner
+  START --> Context[load_context] --> OrderDetails --> Symptoms[Symptom router]
+  Symptoms -->|tier 2| Safety
+  Symptoms -->|clarify| Synthesis
+  Symptoms -->|catalog or general| Reasoner
   Reasoner -->|sales| Catalog --> RxGate
-  RxGate -->|Rx| Synthesis
+  RxGate -->|Rx| Safety
   RxGate -->|OTC order| Confirm -->|confirmed| CreateOrder
-  RxGate -->|catalog answer| RAG
+  RxGate -->|catalog answer| Synthesis
+  Catalog -->|approximate match| Synthesis
   Reasoner -->|customer service| RAG
+  Reasoner -->|chitchat| Synthesis
   Reasoner -->|order status| OrderStatus
   Reasoner -->|safety| Safety
   Reasoner -->|escalation| Escalate
@@ -13,4 +18,4 @@ flowchart TD
   OrderStatus --> Synthesis
   Safety --> Synthesis
   Escalate --> Synthesis
-  Synthesis --> Guardrail --> Persist --> END
+  Synthesis -->|grounded LLM or deterministic fallback| Guardrail --> Persist --> END

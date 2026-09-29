@@ -1,5 +1,8 @@
 flowchart LR
   Reasoner[Reasoner: validated Plan] --> Executor[Executor: RAG, catalog, tools]
   Executor --> Gates[Deterministic Rx, confirmation, safety gates]
-  Gates --> Synthesizer[Synthesizer: fact-bound response]
+  Gates --> Evidence[Grounded evidence: SQL + RAG + conversation memory]
+  Evidence --> Synthesizer[Synthesizer: LLM response]
+  Synthesizer --> Fallback[Deterministic fallback if LLM unavailable]
+  Fallback --> Guardrail
   Synthesizer --> Guardrail[Final safety guardrail]

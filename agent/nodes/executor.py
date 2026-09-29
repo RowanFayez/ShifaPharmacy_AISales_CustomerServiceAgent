@@ -44,10 +44,12 @@ def executor_catalog(state):
     })
     results["name"] = "search_products"
     products = results.get("data") or []
-    offered_product = next((product for product in products if not product.get("requires_prescription")), None)
+    exact_match = results.get("error_code") != "NO_EXACT_MATCH"
+    offered_product = next((product for product in products if not product.get("requires_prescription")), None) if exact_match else None
     return {
         "catalog_results": products, "tool_results": [results],
         "last_catalog_product": offered_product, "last_catalog_results": products,
+        "catalog_exact_match": exact_match,
     }
 
 

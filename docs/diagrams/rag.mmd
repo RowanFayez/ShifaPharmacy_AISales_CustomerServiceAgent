@@ -1,5 +1,8 @@
 flowchart LR
   KnowledgeDocument --> KBService[kb_service] --> Chunks --> Chroma
   AdminCRUD --> KBService
-  Query --> Normalize --> Chroma --> ScoreFloor --> Agent
+  Query --> Normalize --> Chroma --> ScoreFloor --> Evidence[Grounded evidence]
+  SQL[Live SQL catalog, orders, stock] --> Evidence
+  Conversation[Checkpointer memory] --> Evidence
+  Evidence --> Agent[LLM or deterministic response]
   KBService --> ClearRetrievalCache

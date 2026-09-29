@@ -1,7 +1,11 @@
-"""Fact-bound customer-facing responses; live values come only from tool results."""
+"""Grounded customer-facing responses with a deterministic safety fallback."""
+import json
+import os
 import re
-from langchain_core.messages import AIMessage
+from flask import current_app, has_app_context
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from agent.prompts import ar, en, masri
+from agent.llm import get_chat_model
 
 def _prompt(language): return {"ar": ar, "masri": masri}.get(language, en)
 
@@ -110,7 +114,7 @@ def _symptom_disclaimer(language):
     return "These are general suggestions from available products, not a diagnosis. Speak with a pharmacist if symptoms persist or worsen."
 
 
-def synthesizer(state):
+def _deterministic_synthesizer(state):
     if state.get("response"):
         text = _prefix_first_turn(state, state["response"])
         return {"response": text, "messages": [AIMessage(content=text)]}
@@ -146,7 +150,11 @@ def synthesizer(state):
     elif state.get("needs_human"):
         text = "A pharmacist will review your request shortly."
     elif state.get("catalog_results"):
+        catalog_status = (state.get("tool_results") or [{}])[-1].get("error_code")
         text = _catalog_reply(state["catalog_results"], state.get("language", "en"))
+        if catalog_status == "NO_EXACT_MATCH":
+            mentions = (state.get("plan") or {}).get("product_mentions") or ["that product"]
+            text = _not_found_reply(mentions[0], state.get("language", "en")) + "\n\n" + text
         if state.get("symptom_tier") == "tier1": text += "\n\n" + _symptom_disclaimer(state.get("language", "en"))
     elif (
         state.get("tool_results")
@@ -165,5 +173,131 @@ def synthesizer(state):
     elif state.get("retrieved"):
         text = _delivery_reply(state["retrieved"]) if (state.get("plan") or {}).get("rationale") == "delivery, branch, or payment question" else state["retrieved"][0]["content"]
     else: text = prompt.UNKNOWN
+    text = _prefix_first_turn(state, text)
+    return {"response": text, "messages": [AIMessage(content=text)]}
+
+
+def _env_flag(name: str, default: bool) -> bool:
+    return os.getenv(name, str(default)).strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _llm_allowed(state) -> bool:
+    """Use the model for language, never for gates or checkout state."""
+    if not _env_flag("LLM_SYNTHESIZER_ENABLED", True):
+        return False
+    if not has_app_context():
+        return False
+    if current_app.testing and not _env_flag("LLM_SYNTHESIZER_IN_TESTS", False):
+        return False
+    if state.get("response") or state.get("safety_flag") == "rx_required":
+        return False
+    if state.get("symptom_tier") == "tier2" or state.get("needs_human"):
+        return False
+    if state.get("order_stage") in {"collect_details", "awaiting_confirmation"}:
+        return False
+    tool_names = {item.get("name") for item in state.get("tool_results", [])}
+    return not ({"create_order", "get_order_status"} & tool_names)
+
+
+def _grounded_messages(state) -> list:
+    language = state.get("language") or "en"
+    history = [
+        {"role": "user" if isinstance(message, HumanMessage) else "assistant", "content": message.content}
+        for message in state.get("messages", [])[-8:]
+        if hasattr(message, "content")
+    ]
+    evidence = {
+        "language": language,
+        "current_plan": state.get("plan") or {},
+        "catalog_results": state.get("catalog_results") or [],
+        "knowledge_chunks": state.get("retrieved") or [],
+        "tool_results": state.get("tool_results") or [],
+        "customer_context": {
+            "customer_ref": state.get("customer_ref"),
+            "customer_address": state.get("customer_address"),
+        },
+        "conversation": history,
+    }
+    system = (
+        "You are Shifa Pharmacy's helpful customer-service and sales assistant. "
+        "Reply naturally in the customer's language (en, ar, or masri) and use the conversation context. "
+        "The JSON evidence is authoritative: never invent a product, price, stock count, policy, order number, "
+        "or delivery promise. If the evidence does not answer the question, say that plainly and ask one useful "
+        "clarifying question or offer a pharmacist. Do not diagnose, prescribe, or give personalized dosage or "
+        "drug-interaction advice. For mild symptom suggestions, mention only listed OTC products and state that "
+        "the suggestion is general, not a diagnosis. Keep replies concise and conversational.\n\n"
+        "Authoritative evidence:\n" + json.dumps(evidence, ensure_ascii=False, default=str)
+    )
+    return [SystemMessage(content=system), HumanMessage(content="Respond to the customer's latest message.")]
+
+
+def _response_text(result) -> str:
+    content = getattr(result, "content", result)
+    if isinstance(content, list):
+        content = " ".join(
+            block.get("text", "") if isinstance(block, dict) else str(block)
+            for block in content
+        )
+    return str(content).strip()
+
+
+_ARABIC_DIGITS = str.maketrans("٠١٢٣٤٥٦٧٨٩", "0123456789")
+
+
+def _evidence_numbers(state) -> set[str]:
+    """Numbers allowed in a generated reply, collected from this turn only."""
+    evidence = {
+        "catalog_results": state.get("catalog_results") or [],
+        "retrieved": state.get("retrieved") or [],
+        "tool_results": state.get("tool_results") or [],
+    }
+    raw = json.dumps(evidence, ensure_ascii=False, default=str).translate(_ARABIC_DIGITS)
+    return {token.replace(",", ".") for token in re.findall(r"\d+(?:[.,]\d+)?", raw)}
+
+
+def _response_facts_are_grounded(text: str, state) -> bool:
+    """Reject a model reply that introduces an unsupported numeric fact."""
+    numbers = {
+        token.replace(",", ".")
+        for token in re.findall(r"\d+(?:[.,]\d+)?", text.translate(_ARABIC_DIGITS))
+    }
+    return numbers.issubset(_evidence_numbers(state))
+
+
+def _grounded_llm_response(state) -> str | None:
+    messages = _grounded_messages(state)
+    models = [None, os.getenv("LLM_FALLBACK_MODEL")]
+    for model_name in models:
+        if model_name is None and not os.getenv("LLM_MODEL"):
+            continue
+        if model_name is not None and not model_name.strip():
+            continue
+        try:
+            result = get_chat_model(model_name).invoke(messages)
+            text = _response_text(result)
+            if text:
+                return text
+        except Exception:
+            continue
+    return None
+
+
+def synthesizer(state):
+    deterministic = _deterministic_synthesizer(state)
+    if not _llm_allowed(state):
+        return deterministic
+    text = _grounded_llm_response(state)
+    if not text:
+        return deterministic
+    if not _response_facts_are_grounded(text, state):
+        return deterministic
+    if state.get("symptom_tier") == "tier1":
+        disclaimer = _symptom_disclaimer(state.get("language", "en"))
+        already_disclaimed = any(
+            marker in text.casefold()
+            for marker in ("not a diagnosis", "diagnosis", "تشخيص", "ØªØ´Ø®ÙŠØµ")
+        )
+        if not already_disclaimed:
+            text = text.rstrip() + "\n\n" + disclaimer
     text = _prefix_first_turn(state, text)
     return {"response": text, "messages": [AIMessage(content=text)]}

@@ -7,7 +7,9 @@ class AgentState(TypedDict, total=False):
     safety_flag: str | None; needs_human: bool; error: str | None; response: str | None
     customer_ref: str | None; customer_address: str | None
     symptom_tier: str | None; symptom_category: str | None
-    last_catalog_product: dict | None; last_catalog_results: list[dict]; product_focus: dict | None
+    awaiting_symptom_clarification: bool
+    symptom_clarification_rounds: int
+    last_catalog_product: dict | None; last_catalog_results: list[dict]; catalog_exact_match: bool | None; product_focus: dict | None
     offer_accepted: bool
     is_first_turn: bool; channel: str | None
     order_stage: str | None; order_draft: dict | None; order_contact_details: dict | None; order_details_handled: bool

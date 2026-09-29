@@ -20,7 +20,15 @@ def get_chat_model(model_name: str | None = None):
     from langchain_openai import ChatOpenAI
     key = os.getenv("OPENROUTER_API_KEY"); model = model_name or os.getenv("LLM_MODEL")
     if not key or not model: raise RuntimeError("OPENROUTER_API_KEY and LLM_MODEL are required for live agent turns.")
-    return ChatOpenAI(model=model, api_key=key, base_url=os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"), temperature=0)
+    timeout = float(os.getenv("LLM_REQUEST_TIMEOUT", "20"))
+    return ChatOpenAI(
+        model=model,
+        api_key=key,
+        base_url=os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"),
+        temperature=0,
+        timeout=timeout,
+        max_retries=0,
+    )
 
 
 class LocalMultilingualEmbeddings(Embeddings):

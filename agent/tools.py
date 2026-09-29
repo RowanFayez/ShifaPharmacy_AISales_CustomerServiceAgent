@@ -15,7 +15,18 @@ def envelope(call, schema, payload):
         return {"ok": False, "data": None, "error_code": "BACKEND_FAILURE", "message": "The service is temporarily unavailable."}
 def search_products(payload):
     result = envelope(lambda x: catalog_service.search_products(x.query, category=x.category, max_price=Decimal(str(x.max_price)) if x.max_price is not None else None, otc_only=x.otc_only, lang=x.lang), SearchProductsInput, payload)
-    return {"ok": False, "data": [], "error_code": "NO_RESULTS", "message": "No matching products were found."} if result["ok"] and not result["data"] else result
+    if result["ok"] and not result["data"]:
+        request = SearchProductsInput.model_validate(payload)
+        alternatives = catalog_service.suggest_products(
+            request.query, category=request.category, otc_only=request.otc_only,
+        )
+        if alternatives:
+            return {
+                "ok": False, "data": alternatives, "error_code": "NO_EXACT_MATCH",
+                "message": "That exact product was not found; these are nearby catalog alternatives.",
+            }
+        return {"ok": False, "data": [], "error_code": "NO_RESULTS", "message": "No matching products were found."}
+    return result
 def list_categories(payload=None): return envelope(lambda _: catalog_service.list_categories(), ListCategoriesInput, payload or {})
 def check_availability(payload):
     result = envelope(lambda x: catalog_service.check_availability(x.sku_or_name), AvailabilityInput, payload)

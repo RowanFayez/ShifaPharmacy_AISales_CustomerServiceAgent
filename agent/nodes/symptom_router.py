@@ -63,16 +63,34 @@ _MILD_CATEGORY_MAP: tuple[tuple[str, str], ...] = (
 _UNCLEAR_HEALTH = ("not feeling well", "feel unwell", "something is wrong", "مش كويس", "مش مرتاح", "تعبان", "تعبانة")
 
 
+_BACK_SYMPTOMS = ("back pain", "backpain", "وجع الظهر", "ألم الظهر", "وجع الضهر", "ألم الضهر", "Ø§Ù„Ø¸Ù‡Ø±", "Ø§Ù„Ø¶Ù‡Ø±")
+_MILD_CLARIFICATION_ANSWERS = (
+    "mild", "minor", "light", "manageable", "not serious", "nothing serious", "no warning signs", "just mild",
+    "بس خفيف", "بس وجع خفيف", "مجرد وجع بسيط", "مجرد ألم بسيط", "خفيف", "خفيفة", "بسيط", "بسيطة",
+    "مش شديد", "مش شديدة", "مش خطير", "مش خطيرة", "مفيش خطر", "مفيش أعراض خطيرة",
+    "Ø®ÙÙŠÙ", "Ø®ÙÙŠÙØ©", "Ø¨Ø³ÙŠØ·", "Ø¨Ø³ÙŠØ·Ø©", "Ù…Ø´ Ø´Ø¯ÙŠØ¯", "Ù…Ø´ Ø®Ø·ÙŠØ±",
+)
+_CLARIFICATION_RED_FLAGS = (
+    "severe", "serious", "worsening", "getting worse", "warning sign", "trouble breathing", "difficulty breathing",
+    "chest pain", "high fever", "persistent fever", "pregnant", "pregnancy", "blood", "bleeding",
+    "allergic reaction", "anaphylaxis", "شديد", "شديدة", "خطير", "خطيرة", "بتزيد", "بتسوء", "تسوء",
+    "صعوبة في التنفس", "ضيق تنفس", "ألم صدر", "ألم في الصدر", "حرارة عالية", "حرارة مستمرة", "حامل", "حمل",
+    "دم", "نزيف", "حساسية شديدة", "Ø´Ø¯ÙŠØ¯", "Ø´Ø¯ÙŠØ¯Ø©", "Ø®Ø·ÙŠØ±", "Ø¶ÙŠÙ‚ ØªÙ†ÙØ³", "ØµØ¹ÙˆØ¨Ø© ØªÙ†ÙØ³",
+)
+
+
 def classify_symptom(text: str) -> SymptomDecision:
     """Classify a customer health message without naming a diagnosis."""
     normalized = normalize_for_retrieval(text)
-    has_symptom = _contains_any(normalized, _SYMPTOM_WORDS)
+    has_symptom = _contains_any(normalized, _SYMPTOM_WORDS) or _contains_any(normalized, _BACK_SYMPTOMS)
     if _contains_any(normalized, _DOSAGE_OR_INTERACTION):
         return SymptomDecision("tier2")
     if _contains_any(normalized, _RED_FLAGS):
         return SymptomDecision("tier2")
     if has_symptom and _contains_any(normalized, _CHILD_OR_INFANT):
         return SymptomDecision("tier2")
+    if _contains_any(normalized, _BACK_SYMPTOMS) and not _contains_any(normalized, _MILD_CLARIFICATION_ANSWERS):
+        return SymptomDecision("clarify")
     if has_symptom:
         for phrases, category in _MILD_CATEGORY_MAP:
             if _contains_any(normalized, phrases):
@@ -91,10 +109,41 @@ def _clarifying_reply(language: str) -> str:
     return "Are the symptoms mild, or is there a warning sign such as trouble breathing?"
 
 
+def _classify_clarification_answer(text: str) -> SymptomDecision | None:
+    """Interpret the answer to our one clarification before fresh routing."""
+    normalized = normalize_for_retrieval(text)
+    if _contains_any(normalized, _CLARIFICATION_RED_FLAGS):
+        return SymptomDecision("tier2")
+    if _contains_any(normalized, _MILD_CLARIFICATION_ANSWERS):
+        return SymptomDecision("tier1", "pain-relief-cold")
+    return None
+
+
 def symptom_router(state):
     """Store a deterministic tier decision for the graph's next branch."""
-    decision = classify_symptom(_message(state))
-    update = {"symptom_tier": decision.tier, "symptom_category": decision.category}
+    text = _message(state)
+    awaiting = bool(state.get("awaiting_symptom_clarification"))
+    rounds = int(state.get("symptom_clarification_rounds") or 0)
+    if awaiting:
+        # The next customer message answers our question, rather than starting
+        # a new classification. Ambiguity escalates instead of looping.
+        decision = _classify_clarification_answer(text) or SymptomDecision("tier2")
+        update = {
+            "symptom_tier": decision.tier,
+            "symptom_category": decision.category,
+            "awaiting_symptom_clarification": False,
+            "symptom_clarification_rounds": rounds,
+        }
+    else:
+        decision = classify_symptom(text)
+        if decision.tier == "clarify" and rounds >= 1:
+            decision = SymptomDecision("tier2")
+        update = {
+            "symptom_tier": decision.tier,
+            "symptom_category": decision.category,
+            "awaiting_symptom_clarification": decision.tier == "clarify",
+            "symptom_clarification_rounds": rounds + 1 if decision.tier == "clarify" else rounds,
+        }
     if decision.tier == "clarify":
         update["response"] = _clarifying_reply(state.get("language", "en"))
     return update
