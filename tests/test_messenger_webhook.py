@@ -118,3 +118,27 @@ def test_checkout_details_accepts_natural_conversational_message(app):
     with app.app_context():
         details = _parse_details("أنا سما فايز، رقمي 01123649958، ساكنة في العجمي ابويوسف")
     assert details == {"name": "سما فايز", "phone": "01123649958", "address": "العجمي ابويوسف"}
+
+
+def test_checkout_details_accepts_unordered_free_form_fields(app):
+    from agent.nodes.order_details import _parse_details
+
+    with app.app_context():
+        details = _parse_details("العنوان الدخيلة أبو يوسف، اسمي سما فايز ورقمي ٠١٢٣٦٨٦٠٩٦٦")
+    assert details == {"name": "سما فايز", "phone": "01236860966", "address": "الدخيلة أبو يوسف"}
+
+
+def test_checkout_details_accepts_english_free_form_fields(app):
+    from agent.nodes.order_details import _parse_details
+
+    with app.app_context():
+        details = _parse_details("I am Sama Fayez, I live in Agami Abu Yousef and my mobile is 01012345678")
+    assert details == {"name": "Sama Fayez", "phone": "01012345678", "address": "Agami Abu Yousef"}
+
+
+def test_checkout_details_prefers_latest_corrected_field(app):
+    from agent.nodes.order_details import _parse_details
+
+    with app.app_context():
+        details = _parse_details("الاسم غلط، الاسم سما فايز، الموبايل 01012345678، العنوان الدخيلة")
+    assert details["name"] == "سما فايز"

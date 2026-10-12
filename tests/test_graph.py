@@ -49,6 +49,7 @@ def test_checkpointer_keeps_pending_order_between_turns(app, pharmacy_data, monk
     # Existing customer context can still use the normal confirm-and-create
     # path; browser chats without customer context use the details collector.
     assert first["pending_action"] is not None
+    assert "review your order" in first["response"].casefold()
     assert second["tool_results"][-1]["ok"] is True
 
 
@@ -86,6 +87,33 @@ def test_catalog_offer_collects_real_checkout_details_then_creates_order(app, ph
     assert stock_after_quote == stock_before
     assert confirmed["tool_results"][-1]["ok"] is True
     assert stock_after_order == stock_before - 1
+
+
+def test_checkout_correction_requotes_before_confirmation(app, pharmacy_data):
+    """A free-form correction updates the review and cannot create early."""
+    with app.app_context():
+        graph = build_graph()
+        config = {"configurable": {"thread_id": "checkout-correction-loop"}}
+        graph.invoke(
+            {"messages": [HumanMessage(content="Do you have Panadol?")], "conversation_id": None},
+            config=config,
+        )
+        graph.invoke(
+            {"messages": [HumanMessage(content="I want it")], "conversation_id": None},
+            config=config,
+        )
+        details = graph.invoke(
+            {"messages": [HumanMessage(content="I am Sama Fayez, my mobile is 01012345678, I live in Agami")], "conversation_id": None},
+            config=config,
+        )
+        corrected = graph.invoke(
+            {"messages": [HumanMessage(content="The address is Sidi Bishr instead")], "conversation_id": None, "customer_id": details["customer_id"]},
+            config=config,
+        )
+    assert corrected["order_stage"] == "awaiting_confirmation"
+    assert corrected["pending_action"] is not None
+    assert "Sidi Bishr" in corrected["response"]
+    assert corrected.get("tool_results") == []
 
 def test_graph_uses_live_catalog_price_for_sales_answer(app, pharmacy_data, monkeypatch):
     from agent.nodes import reasoner as reasoner_module

@@ -143,8 +143,12 @@ def mark_messenger_retry(event_id: str, error: str) -> None:
 
 def customer_context(customer_id: int | None) -> dict[str, Any]:
     customer = db.session.get(Customer, customer_id) if customer_id else None
-    return {"customer_id": customer.id if customer else None, "customer_ref": customer.phone if customer else None,
-            "customer_address": customer.default_address if customer else None}
+    return {
+        "customer_id": customer.id if customer else None,
+        "customer_ref": customer.phone if customer else None,
+        "customer_name": customer.full_name if customer else None,
+        "customer_address": customer.default_address if customer else None,
+    }
 
 
 def persist_messages(conversation_id: int, messages: list[dict[str, str]], meta: dict[str, Any]) -> None:

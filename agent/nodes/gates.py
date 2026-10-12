@@ -1,8 +1,27 @@
 """Deterministic gates that cannot be bypassed by an LLM prompt."""
 from agent.prompts import ar, en, masri
 from agent.tools import TOOL_REGISTRY
+from app.services import order_service
 
 def _prompt(language): return {"ar": ar, "masri": masri}.get(language, en)
+
+
+def _review_summary(draft, details, quote, language):
+    product = draft.get("name_ar") or draft["name"] if language in {"ar", "masri"} else draft["name"]
+    quantity = draft.get("quantity", 1)
+    if language == "en":
+        return (
+            "Please review your order before I create it:\n"
+            f"- {quantity} x {product}\n- Name: {details['name']}\n- Phone: {details['phone']}\n"
+            f"- Address: {details['address']}\n- Total: EGP {quote['total']} (including EGP {quote['delivery_fee']} delivery)\n"
+            "Reply \"confirm\" to place the order."
+        )
+    return (
+        "تمام، راجع الطلب قبل الإنشاء:\n"
+        f"- {quantity} × {product}\n- الاسم: {details['name']}\n- رقم الموبايل: {details['phone']}\n"
+        f"- العنوان: {details['address']}\n- الإجمالي: {quote['total']} جنيه (شامل {quote['delivery_fee']} جنيه توصيل)\n"
+        "اكتب «تمام» لتأكيد الطلب."
+    )
 
 def rx_gate(state):
     matched = next((item for item in state.get("catalog_results", []) if item.get("requires_prescription")), None)
@@ -34,7 +53,24 @@ def confirmation_gate(state):
             "order_stage": "collect_details",
             "order_draft": {"id": product["id"], "name": product["name"], "name_ar": product.get("name_ar"), "quantity": quantity},
         }
-    return {"pending_action": {"customer_ref": state.get("customer_ref") or "", "items": items, "address": state.get("customer_address") or ""}}
+    draft = {"id": product["id"], "name": product["name"], "name_ar": product.get("name_ar"), "quantity": quantity}
+    details = {
+        "name": state.get("customer_name") or "",
+        "phone": state.get("customer_ref") or "",
+        "address": state.get("customer_address") or "",
+    }
+    try:
+        quote = order_service.quote_order(items)
+        review = _review_summary(draft, details, quote, state.get("language") or "en")
+    except order_service.ServiceError:
+        return {"response": "This product is no longer available to order." if state.get("language") == "en" else "هذا المنتج لم يعد متاحًا للطلب الآن."}
+    return {
+        "pending_action": {"customer_ref": state.get("customer_ref") or "", "items": items, "address": state.get("customer_address") or ""},
+        "order_stage": "awaiting_confirmation",
+        "order_draft": draft,
+        "order_contact_details": details,
+        "response": review,
+    }
 
 def safety_handler(state):
     results = state.get("tool_results", [])

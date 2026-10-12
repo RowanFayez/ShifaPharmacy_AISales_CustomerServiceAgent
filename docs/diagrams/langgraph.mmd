@@ -12,7 +12,10 @@ flowchart TD
   ProductResult --> RxGate
   CategoryResult --> RxGate
   RxGate -->|Rx| Safety
-  RxGate -->|OTC order| Confirm -->|confirmed| CreateOrder
+  RxGate -->|OTC order| Confirm --> Details[Extract free-form checkout details]
+  Details --> Review[Review summary: item + contact + delivery total]
+  Review -->|correction| Details
+  Review -->|explicit confirmation| CreateOrder
   RxGate -->|catalog answer| Synthesis
   Approx --> Synthesis
   Reasoner -->|customer service| RAG

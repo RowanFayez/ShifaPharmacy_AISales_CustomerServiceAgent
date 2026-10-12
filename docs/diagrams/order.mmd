@@ -10,5 +10,13 @@ flowchart LR
   Product --> RxGate
   Products --> RxGate
   RxGate -- Rx --> PrescriptionLead
-  RxGate -- OTC --> Confirmation --> Details[Name + phone + address]
-  Details --> CreateOrder --> Transaction[price + stock + order] --> Result
+  RxGate -- OTC --> Confirmation --> Details[Free-form name + phone + address]
+  Details --> Extract[Parse + validate explicit fields]
+  Extract --> Complete{All checkout fields valid?}
+  Complete -- no --> Ask[Ask only for missing or unclear field]
+  Ask --> Details
+  Complete -- yes --> Review[Show product + customer + delivery + total]
+  Review --> Correction{Customer corrects details?}
+  Correction -- yes --> Details
+  Correction -- no: explicit confirm --> CreateOrder
+  CreateOrder --> Transaction[price + stock + order] --> Result

@@ -6,7 +6,19 @@ def _text(state):
 
 
 def _is_confirmation(text):
-    return text.strip().casefold() in {"yes", "y", "confirm", "ok", "ايوه", "اه", "تمام"}
+    normalized = normalize_for_retrieval(text).strip()
+    # A correction such as "تمام بس العنوان ..." is contact data, not an
+    # approval.  Never let it reach the create-order tool.
+    if any(marker in normalized for marker in ("العنوان", "عنوان", "الموبايل", "رقم", "الاسم", "اسمي", "address", "phone", "name")):
+        return False
+    if any(char.isdigit() for char in normalized):
+        return False
+    phrases = {
+        "yes", "y", "confirm", "confirmed", "ok", "okay", "تمام", "اه", "ايوه", "أيوه",
+        "موافق", "موافقة", "متاكد", "متاكده", "تاكيد", "اكد", "اكيد", "صح", "صحيح",
+        "نفذ", "اعمل الطلب", "اعملي الطلب", "place the order", "go ahead",
+    }
+    return normalized in {normalize_for_retrieval(phrase) for phrase in phrases}
 
 
 def _accepts_catalog_offer(text):
@@ -42,6 +54,12 @@ def load_context(state):
         order_draft["quantity"] = 1
         order_contact_details = {}
     elif previous_stage == "collect_details":
+        pending_action, order_stage, order_draft = None, "collect_details", state.get("order_draft")
+        order_contact_details = state.get("order_contact_details") or {}
+    elif previous_stage == "awaiting_confirmation" and not _is_confirmation(text):
+        # Treat every non-confirmation turn as a possible correction.  The
+        # order_details node will either re-quote corrected fields or clear
+        # the transient checkout when this is a genuinely new question.
         pending_action, order_stage, order_draft = None, "collect_details", state.get("order_draft")
         order_contact_details = state.get("order_contact_details") or {}
     elif _is_confirmation(text) and state.get("pending_action"):
