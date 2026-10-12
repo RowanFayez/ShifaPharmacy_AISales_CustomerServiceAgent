@@ -1,8 +1,13 @@
 flowchart LR
   Request --> Intent[Intent + context]
-  Intent --> Catalog[Exact SQL search]
-  Catalog --> Approx[Approximate alternatives\nnot orderable]
-  Catalog --> RxGate
+  Intent --> Catalog[Live SQL catalog search]
+  Catalog --> Exact{Exact product phrase?}
+  Exact -- yes --> Product[Requested product, price, stock]
+  Exact -- no --> Category{Generic category?}
+  Category -- yes --> Products[Category products]
+  Category -- no --> Approx[Approximate alternatives\nnot orderable]
+  Product --> RxGate
+  Products --> RxGate
   RxGate -- Rx --> PrescriptionLead
   RxGate -- OTC --> Confirmation --> Details[Name + phone + address]
   Details --> CreateOrder --> Transaction[price + stock + order] --> Result

@@ -105,6 +105,25 @@ def search_products(query: str, *, category: str | None = None, max_price: Decim
         (slug for phrase, slug in _CATEGORY_ALIASES.items() if normalize_for_retrieval(phrase) in normalized_query),
         None,
     )
+    # A specific product phrase must win over a broad category alias.  Without
+    # this pass, "فيتامين سي" matched the word "فيتامين" first and returned
+    # every vitamin in the category instead of the Vitamin C product.
+    if query.strip():
+        direct_stmt = select(Product).join(Category).where(
+            Product.active.is_(True), Category.active.is_(True),
+            or_(Product.name.ilike(pattern), Product.name_ar.ilike(pattern),
+                Product.generic_name.ilike(pattern), Product.aliases.ilike(pattern),
+                Product.sku.ilike(pattern)),
+        )
+        if category:
+            direct_stmt = direct_stmt.where(or_(Category.slug == category, Category.name.ilike(f"%{category}%")))
+        if max_price is not None:
+            direct_stmt = direct_stmt.where(Product.price <= max_price)
+        if otc_only:
+            direct_stmt = direct_stmt.where(Product.requires_prescription.is_(False))
+        direct_products = db.session.scalars(direct_stmt.order_by(Product.name).limit(12)).all()
+        if direct_products:
+            return [product_data(product) for product in _rank_products(direct_products, query)]
     stmt = select(Product).join(Category).where(Product.active.is_(True), Category.active.is_(True))
     if query.strip() and not inferred_category:
         stmt = stmt.where(or_(Product.name.ilike(pattern), Product.name_ar.ilike(pattern), Product.generic_name.ilike(pattern), Product.aliases.ilike(pattern), Product.sku.ilike(pattern)))

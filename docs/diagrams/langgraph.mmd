@@ -3,11 +3,16 @@ flowchart TD
   Symptoms -->|tier 2| Safety
   Symptoms -->|clarify| Synthesis
   Symptoms -->|catalog or general| Reasoner
-  Reasoner -->|sales| Catalog --> RxGate
+  Reasoner -->|sales| Catalog[Live SQL catalog search]
+  Catalog -->|specific product exact match| ProductResult[Requested product facts]
+  Catalog -->|generic category request| CategoryResult[Category products]
+  Catalog -->|no exact match| Approx[Nearby alternatives, not orderable]
+  ProductResult --> RxGate
+  CategoryResult --> RxGate
   RxGate -->|Rx| Safety
   RxGate -->|OTC order| Confirm -->|confirmed| CreateOrder
   RxGate -->|catalog answer| Synthesis
-  Catalog -->|approximate match| Synthesis
+  Approx --> Synthesis
   Reasoner -->|customer service| RAG
   Reasoner -->|chitchat| Synthesis
   Reasoner -->|order status| OrderStatus
