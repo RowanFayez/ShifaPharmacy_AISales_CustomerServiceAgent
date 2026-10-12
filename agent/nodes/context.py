@@ -29,8 +29,16 @@ def _accepts_catalog_offer(text):
         "عايز اعمل اوردر", "عاوز اعمل اوردر", "هاخده", "هاخدها", "خده", "خدي",
     }
     normalized_phrases = {normalize_for_retrieval(phrase) for phrase in phrases}
+    # Short forms such as "عايزة" or "عايزه أطلب" do not identify which
+    # product was selected.  Only an explicit pronoun/long acceptance phrase
+    # may reuse the previously offered item.
+    short_ambiguous = {normalize_for_retrieval(phrase) for phrase in {"عايزه", "عايزاه", "عايز"}}
+    if normalized in short_ambiguous:
+        return True
     return normalized in normalized_phrases or any(
-        phrase in normalized for phrase in normalized_phrases if len(phrase) > 3
+        phrase in normalized
+        for phrase in normalized_phrases
+        if len(phrase) > 6 and phrase not in short_ambiguous
     )
 
 

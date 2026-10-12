@@ -18,6 +18,9 @@ def _is_category_list_request(text: str) -> bool:
     return any(term in lowered for term in (
         "what categories", "which categories", "show categories", "what do you sell",
         "الفئات", "فئات", "كاتيجوري", "كاتيجوريز", "اقسام", "الأقسام",
+        "اي الادوية عندك", "اي الادويه عندك", "ايه الادوية عندك", "ايه الادويه عندك",
+        "الأدوية اللي عندك", "الادوية اللي عندك", "الادويه اللي عندك",
+        "اي دوا عندك", "ايه اللي عندك", "كل المنتجات", "what medicines do you have",
     ))
 
 

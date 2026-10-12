@@ -142,3 +142,16 @@ def test_checkout_details_prefers_latest_corrected_field(app):
     with app.app_context():
         details = _parse_details("الاسم غلط، الاسم سما فايز، الموبايل 01012345678، العنوان الدخيلة")
     assert details["name"] == "سما فايز"
+
+
+def test_checkout_details_handles_messenger_style_unlabelled_lines(app):
+    from agent.nodes.order_details import _parse_details
+
+    with app.app_context():
+        details = _parse_details("طيب روان فايز 01234567890 العجمي")
+        multiline = _parse_details("""أنا عايزة بانادول
+اسم روان
+العجمي
+01112345678""")
+    assert details == {"name": "روان فايز", "phone": "01234567890", "address": "العجمي"}
+    assert multiline == {"name": "روان", "phone": "01112345678", "address": "العجمي"}

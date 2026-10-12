@@ -20,7 +20,19 @@ def route_symptom(state):
     tier = state.get("symptom_tier")
     return "safety_handler" if tier == "tier2" else "synthesizer" if tier == "clarify" else "reasoner"
 def route_after_order_details(state): return "synthesizer" if state.get("order_details_handled") else "symptom_router"
-def route_after_catalog(state): return "safety_handler" if state.get("safety_flag") == "rx_required" else "synthesizer" if state.get("catalog_exact_match") is False else "confirmation_gate" if (state.get("plan") or {}).get("wants_to_order") else "synthesizer"
+def route_after_catalog(state):
+    if state.get("safety_flag") == "rx_required":
+        return "safety_handler"
+    if state.get("catalog_exact_match") is False:
+        return "synthesizer"
+    # A broad request such as "عايزة دوا سكر" can return several products.
+    # Show the live choices first; only a single exact OTC result may enter
+    # checkout, preventing an ambiguous category question from becoming an
+    # order by accident.
+    wants_order = (state.get("plan") or {}).get("wants_to_order")
+    if wants_order and len(state.get("catalog_results") or []) == 1:
+        return "confirmation_gate"
+    return "synthesizer"
 def route_confirmation(state): return "executor_tools" if (state.get("plan") or {}).get("confirming_previous_action") else "synthesizer"
 def build_graph(checkpointer=None):
     if checkpointer is None:

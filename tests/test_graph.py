@@ -1,5 +1,5 @@
 from langchain_core.messages import HumanMessage
-from agent.graph import build_graph
+from agent.graph import build_graph, route_after_catalog
 
 def test_graph_safety_branch_uses_no_llm(app):
     with app.app_context():
@@ -45,11 +45,17 @@ def test_checkpointer_keeps_pending_order_between_turns(app, pharmacy_data, monk
     with app.app_context():
         graph = build_graph(); config = {"configurable": {"thread_id": "persistent-confirmation"}}
         first = graph.invoke({"messages": [HumanMessage(content="I want Panadol")], "conversation_id": None, "customer_id": pharmacy_data["customer_id"]}, config=config)
-        second = graph.invoke({"messages": [HumanMessage(content="yes")], "conversation_id": None, "customer_id": pharmacy_data["customer_id"]}, config=config)
+        details = graph.invoke(
+            {"messages": [HumanMessage(content="Sama Hassan, 01012345678, Nasr City")], "conversation_id": None, "customer_id": pharmacy_data["customer_id"]},
+            config=config,
+        )
+        second = graph.invoke({"messages": [HumanMessage(content="yes")], "conversation_id": None, "customer_id": details["customer_id"]}, config=config)
     # Existing customer context can still use the normal confirm-and-create
     # path; browser chats without customer context use the details collector.
-    assert first["pending_action"] is not None
-    assert "review your order" in first["response"].casefold()
+    assert first["pending_action"] is None
+    assert first["order_stage"] == "collect_details"
+    assert details["pending_action"] is not None
+    assert "review your order" in details["response"].casefold()
     assert second["tool_results"][-1]["ok"] is True
 
 
@@ -199,3 +205,29 @@ def test_first_messenger_turn_gets_welcome():
         "plan": {"rationale": "thanks"},
     })
     assert result["response"].startswith("Welcome to Shifa Pharmacy")
+
+
+def test_broad_multi_product_request_never_enters_checkout():
+    state = {
+        "catalog_exact_match": True,
+        "catalog_results": [{"id": 1}, {"id": 2}],
+        "plan": {"wants_to_order": True},
+    }
+    assert route_after_catalog(state) == "synthesizer"
+
+
+def test_short_conversational_opener_does_not_enter_checkout(app):
+    with app.app_context():
+        result = build_graph().invoke(
+            {"messages": [HumanMessage(content="طيب بقولك")], "conversation_id": None},
+            config={"configurable": {"thread_id": "conversation-opener"}},
+        )
+    assert result["plan"]["rationale"] == "conversation opener"
+    assert result["pending_action"] is None
+
+
+def test_ambiguous_order_request_does_not_accept_first_catalog_item():
+    from agent.nodes.context import _accepts_catalog_offer
+
+    assert _accepts_catalog_offer("عايزاه") is True
+    assert _accepts_catalog_offer("طيب عايزة اطلب") is False

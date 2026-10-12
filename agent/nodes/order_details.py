@@ -16,7 +16,12 @@ from agent.llm import get_chat_model
 from agent.schemas import CheckoutDetails
 
 
-_PHONE = re.compile(r"(?<!\d)(?:\+20|0020|0)1[0125]\d{8}(?!\d)")
+# Egyptian mobiles are often pasted with spaces, dashes, or parentheses in
+# Messenger.  Keep the same strict 11-digit validation while accepting those
+# harmless separators.
+_PHONE = re.compile(
+    r"(?<!\d)(?:\+20|0020|0)[\s().-]*1[\s().-]*[0125](?:[\s().-]*\d){8}(?!\d)"
+)
 _ARABIC_DIGITS = str.maketrans("٠١٢٣٤٥٦٧٨٩", "0123456789")
 
 
@@ -55,6 +60,7 @@ def _clean_fragment(value: str) -> str:
         cleaned,
         flags=re.IGNORECASE,
     )
+    cleaned = re.sub(r"^(?:طيب|تمام|انا|أنا)\s+", "", cleaned, flags=re.IGNORECASE)
     return cleaned.strip()
 
 
@@ -98,6 +104,29 @@ def _parse_details(text: str) -> dict[str, str | None]:
     marked = _marked_fragments(normalised)
     name = marked.get("name")
     address = marked.get("address")
+
+    # Messenger users frequently send one value per line without labels:
+    # ``اسم روان`` / ``العجمي`` / ``011...``.  Use the line boundaries as
+    # field boundaries before applying the conversational heuristics below.
+    before_phone = normalised[:phone_match.start()] if phone_match else normalised
+    lines = [line.strip(" \t،,;:-") for line in before_phone.splitlines() if line.strip(" \t،,;:-")]
+    if len(lines) >= 2:
+        name_line_index = next((index for index, line in enumerate(lines) if re.search(r"(?:الاسم|اسم المستلم|اسم العميل|اسمي|اسم|name)", line, re.IGNORECASE)), None)
+        if name_line_index is not None:
+            candidate_name = re.sub(
+                r"^(?:الاسم|اسم المستلم|اسم العميل|اسمي|اسم|name)\s*[:：=-]?\s*",
+                "",
+                lines[name_line_index],
+                flags=re.IGNORECASE,
+            )
+            if candidate_name.strip():
+                name = candidate_name.strip()
+            if not address and name_line_index + 1 < len(lines):
+                address = lines[name_line_index + 1]
+        elif not name:
+            name = lines[0]
+            if not address:
+                address = lines[-1] if len(lines) > 1 else None
     if address:
         address = re.sub(r"\s+(?:and\s+my|و(?:رقمي|الموبايل)).*$", "", address, flags=re.IGNORECASE)
         address = re.sub(r"\s+and\s*$", "", address, flags=re.IGNORECASE)

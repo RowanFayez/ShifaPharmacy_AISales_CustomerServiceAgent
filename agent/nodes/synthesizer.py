@@ -225,7 +225,9 @@ def _grounded_messages(state) -> list:
         "or delivery promise. If the evidence does not answer the question, say that plainly and ask one useful "
         "clarifying question or offer a pharmacist. Do not diagnose, prescribe, or give personalized dosage or "
         "drug-interaction advice. For mild symptom suggestions, mention only listed OTC products and state that "
-        "the suggestion is general, not a diagnosis. Keep replies concise and conversational.\n\n"
+        "the suggestion is general, not a diagnosis. For a short conversational opener such as 'طيب بقولك', "
+        "reply naturally and invite the customer to continue; do not invent a product, order, or policy. "
+        "Keep replies concise and conversational.\n\n"
         "Authoritative evidence:\n" + json.dumps(evidence, ensure_ascii=False, default=str)
     )
     return [SystemMessage(content=system), HumanMessage(content="Respond to the customer's latest message.")]

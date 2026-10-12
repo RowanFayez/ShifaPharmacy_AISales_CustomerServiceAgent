@@ -25,7 +25,7 @@ def _is_catalog_question(text: str) -> bool:
         "skin", "skin care", "skincare", "cream", "moisturizer", "بانادول", "بنادول", "كريم", "بشرة", "بشره", "جلد",
         "باناد", "ادفيل", "بروفين", "اوجمنتين", "فيتامين", "دواء", "دوا", "ادوية", "ادويه",
         "البرد", "انفلونزا", "متوفر", "موجود", "بكام", "سعر", "فئات", "كاتيجوري", "اقسام",
-        "طفل", "اطفال", "عناية", "سكري", "اجهزة", "مسكنات",
+        "طفل", "اطفال", "عناية", "سكري", "سكر", "السكر", "اجهزة", "مسكنات",
     )
     delivery_only_cues = (
         "delivery", "shipping", "delivery fee", "delivery time", "رسوم التوصيل",
@@ -75,6 +75,15 @@ def _is_acknowledgement(text: str) -> bool:
     return lowered in {"تمام", "ماشي", "حاضر", "اوكي", "أوكي", "okay", "ok"}
 
 
+def _is_conversational_opener(text: str) -> bool:
+    """Short attention-getters should not be sent to an unconstrained reply."""
+    lowered = normalize_for_retrieval(text).strip(" ؟?!.,")
+    return lowered in {
+        "طيب", "طيب بقولك", "بقولك", "بقولك حاجة", "لو سمحت", "معلش", "اسمعني",
+        "اتفضل", "hello", "hi", "excuse me", "can i ask", "i have a question",
+    }
+
+
 def _has_product_ordinal_question(text: str) -> bool:
     lowered = normalize_for_retrieval(text)
     ordinal = ("first", "second", "third", "fourth", "الأول", "الاول", "التاني", "الثاني", "التالت", "الثالث", "الرابع")
@@ -90,6 +99,8 @@ def reasoner(state):
         and not state.get("pending_action")
         and state.get("order_stage") not in {"collect_details", "awaiting_confirmation"}
     ): plan = Plan(intent="chitchat", language=language, rationale="thanks")
+    elif _is_conversational_opener(text):
+        plan = Plan(intent="chitchat", language=language, rationale="conversation opener")
     elif state.get("symptom_tier") == "tier1":
         plan = Plan(
             intent="sales", language=language, needs_catalog_lookup=True,

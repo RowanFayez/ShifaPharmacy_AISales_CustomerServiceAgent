@@ -20,7 +20,8 @@ _CATEGORY_ALIASES = {
     "baby": "baby-care", "طفل": "baby-care", "اطفال": "baby-care", "personal care": "personal-care", "عناية شخصية": "personal-care",
     "skin care": "personal-care", "skincare": "personal-care", "skin": "personal-care", "cream": "personal-care",
     "بشرة": "personal-care", "بشره": "personal-care", "جلد": "personal-care", "كريم": "personal-care", "كريم للبشرة": "personal-care",
-    "diabetes": "diabetes-care", "سكري": "diabetes-care", "device": "medical-devices", "اجهزة": "medical-devices",
+    "diabetes": "diabetes-care", "سكري": "diabetes-care", "سكر": "diabetes-care", "السكر": "diabetes-care",
+    "device": "medical-devices", "اجهزة": "medical-devices",
 }
 
 def product_data(product: Product) -> dict:
