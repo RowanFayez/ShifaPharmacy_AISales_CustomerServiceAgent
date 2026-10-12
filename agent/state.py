@@ -13,3 +13,7 @@ class AgentState(TypedDict, total=False):
     offer_accepted: bool
     is_first_turn: bool; channel: str | None
     order_stage: str | None; order_draft: dict | None; order_contact_details: dict | None; order_details_handled: bool
+    llm_used: bool
+    llm_intent_used: bool
+    llm_response_used: bool
+    llm_error: str | None

@@ -81,6 +81,20 @@ def category_list():
     return render_template("admin/categories.html", categories=categories)
 
 
+@admin_bp.get("/categories/<int:category_id>")
+def category_detail(category_id: int):
+    """Show the live products belonging to one category."""
+    category = db.session.scalar(
+        select(Category)
+        .options(selectinload(Category.products))
+        .where(Category.id == category_id)
+    )
+    if category is None:
+        abort(404)
+    products = sorted(category.products, key=lambda product: product.name.casefold())
+    return render_template("admin/category_detail.html", category=category, products=products)
+
+
 @admin_bp.route("/categories/<int:category_id>/edit", methods=["GET", "POST"])
 def category_edit(category_id: int):
     category = db.get_or_404(Category, category_id)
@@ -117,6 +131,11 @@ def category_delete(category_id: int):
 @admin_bp.route("/products/new", methods=["GET", "POST"])
 def product_create():
     form = ProductForm()
+    category_hint = request.args.get("category_id", type=int)
+    if request.method == "GET" and category_hint:
+        category = db.session.get(Category, category_hint)
+        if category is not None and category.active:
+            form.category_id.data = category.id
     if form.validate_on_submit():
         if db.session.scalar(select(Product).where(Product.sku == form.sku.data.strip().upper())):
             form.sku.errors.append("This SKU is already in use.")
@@ -137,6 +156,8 @@ def product_create():
                     active=form.active.data,
                 )
             )
+            if category_hint:
+                return save_or_flash("Product created.", "admin.category_detail", category_id=category_hint)
             return save_or_flash("Product created.", "admin.product_list")
     return render_template("admin/product_form.html", form=form, product=None)
 

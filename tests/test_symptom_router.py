@@ -129,3 +129,15 @@ def test_ambiguous_clarification_answer_escalates_without_repeating_question(app
     assert result["symptom_tier"] == "tier2"
     assert result["needs_human"] is True
     assert "Are the symptoms mild" not in result["response"]
+
+
+def test_arabic_delivery_question_is_not_mistaken_for_blood_red_flag(app):
+    with app.app_context():
+        result = build_graph().invoke(
+            {"messages": [HumanMessage(content="في خدمة توصيل؟")], "conversation_id": None},
+            config={"configurable": {"thread_id": f"arabic-delivery-routing:{uuid4()}"}},
+        )
+    assert result["symptom_tier"] == "none"
+    assert result["plan"]["intent"] == "customer_service"
+    assert result["response"]
+    assert "تشخيص" not in result["response"]

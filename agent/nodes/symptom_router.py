@@ -7,6 +7,7 @@ clarifying question before either path is chosen.
 from __future__ import annotations
 
 from dataclasses import dataclass
+import re
 from typing import Literal
 
 from langchain_core.messages import HumanMessage
@@ -31,7 +32,19 @@ def _message(state) -> str:
 
 
 def _contains_any(text: str, phrases: tuple[str, ...]) -> bool:
-    return any(normalize_for_retrieval(phrase) in text for phrase in phrases)
+    for phrase in phrases:
+        normalized = normalize_for_retrieval(phrase)
+        if not normalized:
+            continue
+        # Very short Arabic terms such as "دم" must be whole words.  A plain
+        # substring check would match the final letters of unrelated words
+        # such as "خدمة" and falsely escalate a delivery question.
+        if normalized in {"دم"}:
+            if re.search(rf"(?<![\w\u0600-\u06ff]){re.escape(normalized)}(?![\w\u0600-\u06ff])", text):
+                return True
+        elif normalized in text:
+            return True
+    return False
 
 
 _DOSAGE_OR_INTERACTION = (

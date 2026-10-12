@@ -84,6 +84,31 @@ def _parse_details(text: str) -> dict[str, str | None]:
     return {"name": name if name and len(name) >= 2 else None, "phone": phone, "address": address if address and len(address) >= 3 else None}
 
 
+def _looks_like_checkout_message(text: str) -> bool:
+    """Return whether a turn is plausibly supplying checkout contact data.
+
+    Checkout is a stateful branch, but it must not swallow a new product or
+    service question.  A phone number or an explicit contact/address label is
+    a much safer signal than treating every following message as checkout
+    data.
+    """
+    normalized = text.translate(_ARABIC_DIGITS)
+    if _PHONE.search(normalized):
+        return True
+    return bool(re.search(
+        r"(?:الاسم|اسم\s+(?:المستلم|العميل)|اسمي|الموبايل|رقم(?:ي| التليفون)?|تليفوني|"
+        r"العنوان|مكان\s+التوصيل|ساكن(?:ة|ه)?|عايش(?:ة|ه)?|name|phone|mobile|address|living\s+in)",
+        normalized,
+        flags=re.IGNORECASE,
+    ))
+
+
+def _is_short_checkout_ack(text: str) -> bool:
+    return text.strip().casefold() in {
+        "yes", "y", "ok", "okay", "تمام", "اه", "أه", "ايوه", "أيوه", "ماشي", "حاضر",
+    }
+
+
 def _details_prompt(language: str) -> str:
     if language == "en":
         return (
@@ -145,6 +170,17 @@ def order_details(state):
     draft = state.get("order_draft") or {}
     if not draft:
         return {"response": _details_prompt(language), "order_details_handled": True}
+    incoming = _text(state)
+    # A customer can change their mind or ask a fresh catalog/service question
+    # while checkout is open.  Do not repeat the checkout prompt forever; clear
+    # only the transient draft and let the normal reasoner handle that message.
+    if not _looks_like_checkout_message(incoming) and not _is_short_checkout_ack(incoming):
+        return {
+            "order_details_handled": False,
+            "order_stage": None,
+            "order_draft": None,
+            "order_contact_details": {},
+        }
     parsed = _parse_details(_text(state))
     previous = state.get("order_contact_details") or {}
     # Keep valid fields from an earlier Messenger turn when the customer sends

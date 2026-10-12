@@ -21,6 +21,15 @@ def _is_category_list_request(text: str) -> bool:
     ))
 
 
+def _is_variant_follow_up(text: str) -> bool:
+    lowered = normalize_for_retrieval(text)
+    return any(term in lowered for term in (
+        "which one", "which ones", "which type", "what types", "other types",
+        "أي نوع", "اي نوع", "أنواع", "انواع", "النوع", "الأنواع", "الانواع",
+        "اللي عندك", "الموجود عندك", "منه",
+    ))
+
+
 def _is_delivery_question(text: str) -> bool:
     lowered = normalize_for_retrieval(text)
     return any(term in lowered for term in (
@@ -36,6 +45,14 @@ def executor_catalog(state):
         results["name"] = "list_categories"
         return {"catalog_results": [], "tool_results": [results]}
     symptom_category = state.get("symptom_category")
+    previous = state.get("last_catalog_results") or []
+    # Re-run a live category query for follow-ups such as "which types do you
+    # have?" instead of searching the literal pronoun-filled sentence.
+    if _is_variant_follow_up(query) and previous:
+        category_name = previous[0].get("category")
+        if category_name:
+            query = ""
+            symptom_category = category_name
     results = TOOL_REGISTRY["search_products"]({
         "query": "" if symptom_category else query,
         "category": symptom_category,

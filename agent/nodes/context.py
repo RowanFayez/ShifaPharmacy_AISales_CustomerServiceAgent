@@ -60,12 +60,13 @@ def load_context(state):
         "is_first_turn": bool(state.get("is_first_turn")), "channel": state.get("channel"),
         "offer_accepted": offer_accepted, "order_stage": order_stage, "order_draft": order_draft,
         "order_contact_details": order_contact_details,
-        "order_details_handled": False, **context,
+        "order_details_handled": False, "llm_used": False, "llm_intent_used": False,
+        "llm_response_used": False, "llm_error": None, **context,
     }
 def persist_turn(state):
     conversation_id = state.get("conversation_id")
     if conversation_id:
         messages = [{"role": "user" if isinstance(message, HumanMessage) else "assistant", "content": message.content}
                     for message in state.get("messages", [])[-2:] if isinstance(message, (HumanMessage, AIMessage))]
-        conversation_service.persist_messages(conversation_id, messages, {"intent": (state.get("plan") or {}).get("intent"), "language": state.get("language"), "tools_called": [x.get("name") for x in state.get("tool_results", [])], "doc_ids": [x["metadata"]["doc_id"] for x in state.get("retrieved", [])], "scores": [x["score"] for x in state.get("retrieved", [])]})
+        conversation_service.persist_messages(conversation_id, messages, {"intent": (state.get("plan") or {}).get("intent"), "language": state.get("language"), "llm_intent_used": bool(state.get("llm_intent_used")), "llm_response_used": bool(state.get("llm_response_used")), "tools_called": [x.get("name") for x in state.get("tool_results", [])], "doc_ids": [x["metadata"]["doc_id"] for x in state.get("retrieved", [])], "scores": [x["score"] for x in state.get("retrieved", [])]})
     return {}

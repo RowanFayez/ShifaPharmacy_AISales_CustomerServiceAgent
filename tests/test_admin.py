@@ -52,7 +52,6 @@ def test_order_status_and_customer_history_views(client, app, pharmacy_data):
     response = client.get(f"/admin/orders/{order_id}")
     assert response.status_code == 200
     assert b"SHF-TEST-001" in response.data
-
     response = client.post(
         f"/admin/orders/{order_id}/status",
         data={"status": "out_for_delivery"},
@@ -68,3 +67,15 @@ def test_order_status_and_customer_history_views(client, app, pharmacy_data):
     assert response.status_code == 200
     assert b"Order history" in response.data
     assert b"SHF-TEST-001" in response.data
+
+
+def test_category_detail_lists_products_and_prefills_category_for_new_product(client, app, pharmacy_data):
+    category_id = pharmacy_data["category_id"]
+    response = client.get(f"/admin/categories/{category_id}")
+    assert response.status_code == 200
+    assert b"Panadol" in response.data
+    assert b"Add product to category" in response.data
+
+    response = client.get(f"/admin/products/new?category_id={category_id}")
+    assert response.status_code == 200
+    assert b"Save product" in response.data

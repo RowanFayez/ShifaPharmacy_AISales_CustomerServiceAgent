@@ -174,7 +174,7 @@ def _deterministic_synthesizer(state):
         text = _delivery_reply(state["retrieved"]) if (state.get("plan") or {}).get("rationale") == "delivery, branch, or payment question" else state["retrieved"][0]["content"]
     else: text = prompt.UNKNOWN
     text = _prefix_first_turn(state, text)
-    return {"response": text, "messages": [AIMessage(content=text)]}
+    return {"response": text, "messages": [AIMessage(content=text)], "llm_response_used": False}
 
 
 def _env_flag(name: str, default: bool) -> bool:
@@ -300,4 +300,4 @@ def synthesizer(state):
         if not already_disclaimed:
             text = text.rstrip() + "\n\n" + disclaimer
     text = _prefix_first_turn(state, text)
-    return {"response": text, "messages": [AIMessage(content=text)]}
+    return {"response": text, "messages": [AIMessage(content=text)], "llm_response_used": True}
