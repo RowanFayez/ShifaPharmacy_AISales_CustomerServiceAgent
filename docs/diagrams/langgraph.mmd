@@ -4,9 +4,11 @@ flowchart TD
   Symptoms -->|clarify| Synthesis
   Symptoms -->|catalog or general| Reasoner
   Reasoner -->|sales| Catalog[Live SQL catalog search]
-  Catalog -->|specific product exact match| ProductResult[Requested product facts]
-  Catalog -->|generic category request| CategoryResult[Category products]
-  Catalog -->|no exact match| Approx[Nearby alternatives, not orderable]
+  Catalog --> Specific{Specific product phrase?}
+  Specific -->|yes: any category| ProductResult[Requested product facts: price + stock]
+  Specific -->|no| Generic{Generic category request?}
+  Generic -->|yes: any category| CategoryResult[Category products]
+  Generic -->|no| Approx[Nearby alternatives, not orderable]
   ProductResult --> RxGate
   CategoryResult --> RxGate
   RxGate -->|Rx| Safety

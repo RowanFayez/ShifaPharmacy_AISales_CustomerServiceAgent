@@ -1,10 +1,11 @@
 flowchart LR
   Request --> Intent[Intent + context]
   Intent --> Catalog[Live SQL catalog search]
-  Catalog --> Exact{Exact product phrase?}
-  Exact -- yes --> Product[Requested product, price, stock]
-  Exact -- no --> Category{Generic category?}
-  Category -- yes --> Products[Category products]
+  Catalog --> Specific[Direct product match\nname / Arabic name / alias / generic / SKU]
+  Specific --> Exact{Specific product found?}
+  Exact -- yes --> Product[Only requested product\nprice + stock]
+  Exact -- no --> Category{Generic category request?}
+  Category -- yes --> Products[All live products in that category]
   Category -- no --> Approx[Approximate alternatives\nnot orderable]
   Product --> RxGate
   Products --> RxGate
