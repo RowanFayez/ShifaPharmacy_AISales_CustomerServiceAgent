@@ -24,5 +24,5 @@ def normalize_for_retrieval(text: str) -> str:
 def detect_language(text: str) -> str:
     """Small deterministic detector; Masri markers take precedence over Arabic script."""
     lowered = normalize_for_retrieval(text)
-    if any(marker in lowered for marker in ("يا", "عايز", "عايزه", "بكام", "ازاي", "اسطا")): return "masri"
+    if any(marker in lowered for marker in ("يا", "عايز", "عايزه", "عايزة", "عاوز", "بكام", "ازاي", "اسطا", "دليفري", "ديليفري")): return "masri"
     return "ar" if any("\u0600" <= char <= "\u06ff" for char in text) else "en"

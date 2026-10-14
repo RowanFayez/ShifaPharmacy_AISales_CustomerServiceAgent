@@ -30,6 +30,7 @@ def _is_catalog_question(text: str) -> bool:
     delivery_only_cues = (
         "delivery", "shipping", "delivery fee", "delivery time", "رسوم التوصيل",
         "موعد التوصيل", "خدمة التوصيل", "خدمة توصيل", "التوصيل", "توصيل", "شحن",
+        "دليفري", "ديليفري", "الدليفري", "الديليفري", "الشحن",
     )
     # An availability question beginning with "في" often contains a brand that
     # is not yet in our aliases.  Keep it on the local catalog path instead of
@@ -49,7 +50,7 @@ def _is_service_question(text: str) -> bool:
     lowered = normalize_for_retrieval(text)
     return any(cue in lowered for cue in (
         "delivery", "delivery fee", "delivery time", "branch", "branches", "hours", "payment",
-        "توصيل", "رسوم", "موعد", "فروع", "فرع", "مواعيد", "ساعات العمل", "دفع",
+        "توصيل", "دليفري", "ديليفري", "الشحن", "رسوم", "موعد", "فروع", "فرع", "مواعيد", "ساعات العمل", "دفع",
     ))
 
 

@@ -231,3 +231,12 @@ def test_ambiguous_order_request_does_not_accept_first_catalog_item():
 
     assert _accepts_catalog_offer("عايزاه") is True
     assert _accepts_catalog_offer("طيب عايزة اطلب") is False
+
+
+def test_egyptian_delivery_transliteration_routes_to_service_not_catalog(app):
+    from agent.nodes.reasoner import reasoner
+
+    plan = reasoner({"messages": [HumanMessage(content="في دليفري متاح؟")], "language": "masri"})["plan"]
+    assert plan["intent"] == "customer_service"
+    assert plan["needs_rag"] is True
+    assert plan["needs_catalog_lookup"] is False
