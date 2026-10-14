@@ -240,3 +240,71 @@ def test_egyptian_delivery_transliteration_routes_to_service_not_catalog(app):
     assert plan["intent"] == "customer_service"
     assert plan["needs_rag"] is True
     assert plan["needs_catalog_lookup"] is False
+
+
+def test_semantic_classifier_handles_unknown_delivery_spelling(app, monkeypatch):
+    from agent.nodes import reasoner as reasoner_module
+    from agent.schemas import Plan
+
+    class Structured:
+        def invoke(self, _messages):
+            return Plan(intent="customer_service", language="masri", needs_rag=True, rationale="semantic delivery")
+
+    class Model:
+        def with_structured_output(self, _schema):
+            return Structured()
+
+    monkeypatch.setenv("LLM_REASONER_IN_TESTS", "true")
+    monkeypatch.setattr(reasoner_module, "get_chat_model", lambda *args: Model())
+    with app.app_context():
+        plan = reasoner_module.reasoner({"messages": [HumanMessage(content="في دلفري متاح؟")], "language": "masri"})["plan"]
+    assert plan["intent"] == "customer_service"
+    assert plan["needs_rag"] is True
+
+
+def test_semantic_classifier_handles_an_unlisted_general_question(app, monkeypatch):
+    """Ordinary questions use the model instead of growing a keyword list."""
+    from agent.nodes import reasoner as reasoner_module
+    from agent.schemas import Plan
+
+    class Structured:
+        def invoke(self, _messages):
+            return Plan(intent="chitchat", language="en", rationale="general conversation")
+
+    class Model:
+        def with_structured_output(self, _schema):
+            return Structured()
+
+    monkeypatch.setenv("LLM_REASONER_IN_TESTS", "true")
+    monkeypatch.setattr(reasoner_module, "get_chat_model", lambda *args: Model())
+    with app.app_context():
+        plan = reasoner_module.reasoner({
+            "messages": [HumanMessage(content="Can you help me understand something unrelated to products?")],
+            "language": "en",
+        })
+    assert plan["plan"]["intent"] == "chitchat"
+    assert plan["llm_intent_used"] is True
+
+
+def test_semantic_plan_is_not_overridden_by_a_delivery_word(app, monkeypatch):
+    """The model keeps mixed intents (buy + delivery) instead of a keyword override."""
+    from agent.nodes import reasoner as reasoner_module
+    from agent.schemas import Plan
+
+    class Structured:
+        def invoke(self, _messages):
+            return Plan(intent="sales", language="masri", needs_catalog_lookup=True, wants_to_order=True, rationale="selected product and delivery")
+
+    class Model:
+        def with_structured_output(self, _schema):
+            return Structured()
+
+    monkeypatch.setenv("LLM_REASONER_IN_TESTS", "true")
+    monkeypatch.setattr(reasoner_module, "get_chat_model", lambda *args: Model())
+    with app.app_context():
+        result = reasoner_module.reasoner({
+            "messages": [HumanMessage(content="عايزة بانادول والتوصيل لو سمحت")],
+            "language": "masri",
+        })
+    assert result["plan"]["intent"] == "sales"
+    assert result["plan"]["wants_to_order"] is True

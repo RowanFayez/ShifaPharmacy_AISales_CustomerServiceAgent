@@ -189,6 +189,8 @@ def _llm_allowed(state) -> bool:
         return False
     if current_app.testing and not _env_flag("LLM_SYNTHESIZER_IN_TESTS", False):
         return False
+    if state.get("error") == "LLM_UNAVAILABLE" or state.get("llm_error") == "LLM_UNAVAILABLE":
+        return False
     if state.get("response") or state.get("safety_flag") == "rx_required":
         return False
     if state.get("symptom_tier") == "tier2" or state.get("needs_human"):
