@@ -14,6 +14,18 @@ def test_misspelled_product_returns_nearest_catalog_alternative(app, pharmacy_da
     assert result["data"][0]["name"] == "Panadol 500 mg Tablets 24"
 
 
+def test_arabic_misspelling_returns_the_closest_catalog_product(app, pharmacy_data):
+    with app.app_context():
+        # بانادولل: an extra final letter, represented by code points so this
+        # test remains readable even on Windows terminals with a legacy codepage.
+        query = "".join(chr(code) for code in (1576, 1575, 1606, 1575, 1583, 1608, 1604, 1604))
+        result = search_products({"query": query})
+
+    assert result["ok"] is False
+    assert result["error_code"] == "NO_EXACT_MATCH"
+    assert result["data"][0]["name"] == "Panadol 500 mg Tablets 24"
+
+
 def test_nearest_alternative_is_not_ordered_without_exact_match(app, pharmacy_data):
     with app.app_context():
         result = build_graph().invoke(

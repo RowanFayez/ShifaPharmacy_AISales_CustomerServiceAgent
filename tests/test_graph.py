@@ -308,3 +308,39 @@ def test_semantic_plan_is_not_overridden_by_a_delivery_word(app, monkeypatch):
         })
     assert result["plan"]["intent"] == "sales"
     assert result["plan"]["wants_to_order"] is True
+
+
+def test_arabic_product_availability_reaches_catalog_before_rx_gate(app, monkeypatch):
+    """An availability question must inspect the DB; it is not medical advice."""
+    from agent.nodes import reasoner as reasoner_module
+    from agent.schemas import Plan
+
+    class Structured:
+        def invoke(self, _messages):
+            return Plan(
+                intent="sales",
+                language="ar",
+                needs_catalog_lookup=True,
+                product_mentions=["Panadol"],
+                rationale="product availability",
+            )
+
+    class Model:
+        def with_structured_output(self, _schema):
+            return Structured()
+
+    monkeypatch.setenv("LLM_REASONER_IN_TESTS", "true")
+    monkeypatch.setattr(reasoner_module, "get_chat_model", lambda *args: Model())
+    message = "".join(chr(code) for code in (
+        1583, 1608, 1575, 32, 1576, 1575, 1606, 1575, 1583, 1608, 1604,
+        32, 1605, 1608, 1580, 1608, 1583, 32, 1567,
+    ))
+    with app.app_context():
+        result = build_graph().invoke(
+            {"messages": [HumanMessage(content=message)], "conversation_id": None},
+            config={"configurable": {"thread_id": "arabic-panadol-availability"}},
+        )
+
+    assert result["catalog_results"]
+    assert result["catalog_results"][0]["name"] == "Panadol 500 mg Tablets 24"
+    assert result["safety_flag"] is None

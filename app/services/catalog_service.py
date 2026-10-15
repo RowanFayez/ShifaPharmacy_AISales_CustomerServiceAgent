@@ -66,9 +66,23 @@ def _fuzzy_products(products: list[Product], query: str, *, minimum_score: float
     ranked: list[tuple[float, Product]] = []
     for product in products:
         candidates = _catalog_terms(product)
+        # Compare against individual name/alias tokens, not the entire product
+        # sentence.  Full-string similarity can make an unrelated long name
+        # look closer than the actual medicine (especially with Arabic text).
+        candidate_tokens = [
+            token
+            for candidate in candidates
+            for token in re.findall(r"[\w-]+", candidate, flags=re.UNICODE)
+            if len(token) > 2
+        ]
         score = max(
-            (1.0 if term in candidate else SequenceMatcher(None, term, candidate).ratio()
-             for term in terms for candidate in candidates),
+            (
+                1.0
+                if term == candidate or term in candidate or candidate in term
+                else SequenceMatcher(None, term, candidate).ratio()
+                for term in terms
+                for candidate in candidate_tokens
+            ),
             default=0.0,
         )
         # Do not turn a weakly similar name into a different medicine.  This
